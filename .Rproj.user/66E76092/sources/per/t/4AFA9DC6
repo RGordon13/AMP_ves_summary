@@ -1,0 +1,29 @@
+{
+    "id": "4AFA9DC6",
+    "path": "C:/Users/jessica.mccordic.NMFS/Desktop/All_sites_AMP_ves_summary/scripts/1_Reformat_data_for_HP.R",
+    "project_path": "scripts/1_Reformat_data_for_HP.R",
+    "type": "r_source",
+    "hash": "709573055",
+    "contents": "",
+    "dirty": false,
+    "created": 1734200860253.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "175,17",
+        "scrollLine": "146",
+        "docOutlineVisible": "1",
+        "docOutlineSize": "98"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1734386308,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1734386308596,
+    "read_only": false,
+    "read_only_alternatives": []
+}
