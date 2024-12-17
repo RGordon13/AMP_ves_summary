@@ -156,6 +156,7 @@ ins_out_data <- ins_out_og |>
 
 ins_vessels <- ins_out_data |>
   filter(used == 1) |>
+  filter(pins_sm >= 0.75) |>
   mutate(begin_file_date = ymd(str_sub(Date, 1,6)),
                       seln_num = as.numeric(gsub(pattern = "S", replacement = "", x = Selection)))|>
   left_join(selns_data, 
@@ -163,39 +164,28 @@ ins_vessels <- ins_out_data |>
                    "seln_num" = "Selection", 
                    "begin_file_date" = "Begin_file_date"))
 
-#### LEFT OFF HERE -- join not behaving?? ####
-
-# issue with DSW 10/30 & 10/31 --> Selection 1 is not the earliest in time, so both dates were assigned the same begin_file_date = 10/31/2020
-# solution: in Compile_Raven_selns function, add line to sort by Begin_Date first, THEN use first date as filedate
-# ... will need to re-do all to ensure consistency. meh. 
-#     should also update in reporting scripts. 
-
-# issue w/GEO 01/20 -- typo in datasheet w/ 2 sub-selections from same selection "used" = 1, fixed in Excel
-
-
-# Warning message:
-#   In left_join(mutate(ins_out_data, begin_file_date = ymd(str_sub(Date,  :
-#                                                                     Detected an unexpected many-to-many relationship between `x` and `y`.
-#                                                                   ℹ Row 71 of `x` matches multiple rows in `y`.
-#                                                                   ℹ Row 488 of `y` matches multiple rows in `x`.
-#                                                                   ℹ If a many-to-many relationship is expected, set `relationship = "many-to-many"` to silence this warning.
-# 
-
-
 
 #### Ins Park tables -- reshape into hp ####
+# 
+# # map this over dep_list?
+# # reshape into HP to merge with HP tables
+# ins_cgmp_hp <- inside_tables_to_hp(ins_table = ins_cgmp, site_id = "Cod Grounds")
+# ins_simp_hp <- inside_tables_to_hp(ins_table = ins_simp, site_id = "EP")
+# ins_dne_hp <- inside_tables_to_hp(ins_table = ins_dne, site_id = "DNE")
+# ins_ngn_hp <- inside_tables_to_hp(ins_table = ins_ngn, site_id = "NGN")
+# ins_trw_hp <- inside_tables_to_hp(ins_table = ins_trw, site_id = "TRW D1")
+# ins_geo_hp <- inside_tables_to_hp(ins_table = ins_geo, site_id = "GEO")
+# ins_jur_hp <- inside_tables_to_hp(ins_table = ins_jur, site_id = "JNE")
 
-# map this over dep_list?
-# reshape into HP to merge with HP tables
-ins_cgmp_hp <- inside_tables_to_hp(ins_table = ins_cgmp, site_id = "Cod Grounds")
-ins_simp_hp <- inside_tables_to_hp(ins_table = ins_simp, site_id = "EP")
-ins_dne_hp <- inside_tables_to_hp(ins_table = ins_dne, site_id = "DNE")
-ins_ngn_hp <- inside_tables_to_hp(ins_table = ins_ngn, site_id = "NGN")
-ins_trw_hp <- inside_tables_to_hp(ins_table = ins_trw, site_id = "TRW D1")
-ins_geo_hp <- inside_tables_to_hp(ins_table = ins_geo, site_id = "GEO")
-ins_jur_hp <- inside_tables_to_hp(ins_table = ins_jur, site_id = "JNE")
 
+# get counts per site per date per hour for inside vessels
+# will it break to just try.... 
+ins_hp <- inside_tables_to_hp(ins_table = ins_vessels)
+# yes it did break. rethink this now that all data is getting reshaped together... 
 
+# join inside vessels to total vessels
+total_ins_hp <- hp_data |>
+  left_join()
 
 
 
