@@ -1,6 +1,6 @@
 {
     "id": "4AFA9DC6",
-    "path": "C:/Users/jessica.mccordic.NMFS/Desktop/All_sites_AMP_ves_summary/scripts/1_Reformat_data_for_HP.R",
+    "path": "~/GitHub/AMP_ves_summary/scripts/1_Reformat_data_for_HP.R",
     "project_path": "scripts/1_Reformat_data_for_HP.R",
     "type": "r_source",
     "hash": "709573055",
