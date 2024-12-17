@@ -3,7 +3,7 @@
 #' 
 #' Summarize vessel activity across 9 marine parks
 #' 
-#' Updated Sept 2024
+#' Updated Dec 2024
 #' ---------------------------------------------------------
 
 
@@ -163,6 +163,15 @@ ins_vessels <- ins_out_data |>
                    "begin_file_date" = "Begin_file_date"))
 
 #### LEFT OFF HERE -- join not behaving?? ####
+
+# issue with DSW 10/30 & 10/31 --> Selection 1 is not the earliest in time, so both dates were assigned the same begin_file_date = 10/31/2020
+# solution: in Compile_Raven_selns function, add line to sort by Begin_Date first, THEN use first date as filedate
+# ... will need to re-do all to ensure consistency. meh. 
+#     should also update in reporting scripts. 
+
+# issue w/GEO 01/20 -- typo in datasheet w/ 2 sub-selections from same selection "used" = 1, fixed in Excel
+
+
 # Warning message:
 #   In left_join(mutate(ins_out_data, begin_file_date = ymd(str_sub(Date,  :
 #                                                                     Detected an unexpected many-to-many relationship between `x` and `y`.
