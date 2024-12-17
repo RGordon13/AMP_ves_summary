@@ -28,7 +28,10 @@ Compile_Raven_selns <- function(site_id = character(),
                 "Begin_Clock" = "Begin.Clock.Time",
                 "End_Clock" = "End.Clock.Time", 
                 "Delta_Time_s" = "Delta.Time..s.")) |>
-    map(~mutate(., Begin_file_date = first(Begin_Date)))
+    map(~mutate(., Begin_Date_asdate = ymd(Begin_Date))) |>
+    map(~arrange(., Begin_Date_asdate)) |> 
+    map(~mutate(., Begin_file_date = first(Begin_Date))) |>
+    map(~select(., !Begin_Date_asdate))
   
   
   # Now we have selection tables as a list, but we want them all together in one dataframe

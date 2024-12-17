@@ -155,6 +155,7 @@ ins_out_data <- ins_out_og |>
 
 
 ins_vessels <- ins_out_data |>
+  filter(used == 1) |>
   mutate(begin_file_date = ymd(str_sub(Date, 1,6)),
                       seln_num = as.numeric(gsub(pattern = "S", replacement = "", x = Selection)))|>
   left_join(selns_data, 
