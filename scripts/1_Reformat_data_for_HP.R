@@ -145,7 +145,8 @@ selns_data <- selns_og |>
 
 
 # Bind rows to get df for inside-outside tables
-# don't need to do other adjustments bc will join with seln tables
+# don't need to do other adjustments for time zone etc bc will join with selns_data which has
+# Begin_hour_loc and Begin_date_loc fields
 
 ins_out_data <- ins_out_og |>
   map(~select(., Filename, Date, Selection, used, pins_sm, pins_med, pins_lg, pins_ovrll, Dep_ID)) |>
