@@ -17,8 +17,12 @@ Compile_Raven_selns <- function(site_id = character(),
     # list all files with .txt extension
     list.files(pattern = ".txt") |>
     map_chr(~paste0(dir_seln,"\\",  .)) |>
+    as_tibble() |> # trying to get filenames into the equation... 
+    rename("fullpath" = "value") |>
+    mutate(filename = basename(fullpath)) |>
     # use map to iterate read.delim() function over each file in the directory
-    map(~read.delim(.)) |>
+    map(~read.delim(.)) |> # original code resumes here
+    # map(~read.delim({.}$fullpath)) |>
     # rename columns with funky character formatting
     map(~rename(.,"Begin_Time" = "Begin.Time..s.",
                 "End_Time" = "End.Time..s.",
