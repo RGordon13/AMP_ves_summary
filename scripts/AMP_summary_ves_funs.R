@@ -156,21 +156,14 @@ getDeploymentInfo <- function(deployment){
 
 
 
-inside_tables_to_hp <- function(ins_table, 
-                                site_id = character()){
-  # ves_og <- read_csv(choose.files(caption = "Choose Ship Detection Notes for given dep")) |>
-  ves_og <- ins_table |>
-    # change Behavior to factor and explicitly set all behaviors as levels
-    mutate(Behavior = factor(Behavior, levels = c("CPA","CPAM","TA","TAM","TB","MANEUVER","TRANSIT")))
-  
-  
-  
-  #### Create Hourly Presence Table ####
-  
+inside_tables_to_hp <- function(ins_table){
+
+  #### Reshape inside table into hourly presence (local tz) ####
+  #### left off here-ish trying to get inside vessels to HP to join with HP tables
   # Count instances of each behavior per date-hour
-  hr_tally <- ves_og |>
-    mutate(Begin_Date = as_date(Begin_Date, format = "%m/%d/%Y"))|>
-    group_by(Begin_Date, Behavior, Begin_hour, SiteID) |>
+  hr_tally <- ins_table |>
+    mutate(Behavior = replace_na(Behavior, "Not_Assigned")) |>
+    group_by(Begin_Date_loc, Behavior, Begin_Hour_loc, Dep_ID) |>
     count() |>
     pivot_wider(names_from = Behavior,
                 values_from = n,

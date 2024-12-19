@@ -104,7 +104,7 @@ hp_data <- hp_allcols |>
   bind_rows()
 
 # Create CSV to make data input easier. Maybe eventually add some logic in script to bypass generating this?
-# write_csv(hp_data, "data_outputs/total_ves_hp_by_site.csv")
+write_csv(hp_data, "data_outputs/total_ves_hp_by_site.csv")
 
 
 
@@ -143,6 +143,9 @@ selns_data <- selns_og |>
                Weekday = weekdays(Begin_Date_loc))) |>
   bind_rows()
 
+# write csv for easier input later
+write.csv(selns_data, "data_outputs/total_ves_selns_data_by_site.csv")
+
 
 # Bind rows to get df for inside-outside tables
 # don't need to do other adjustments for time zone etc bc will join with selns_data which has
@@ -153,6 +156,9 @@ ins_out_data <- ins_out_og |>
   map(~mutate(., Date = as.numeric(Date),
               Date = as.character(Date))) |>
   bind_rows()
+
+# write csv for easier input later
+write.csv(ins_out_data, "data_outputs/total_ves_ins_out_by_site.csv")
 
 
 ins_vessels <- ins_out_data |>
