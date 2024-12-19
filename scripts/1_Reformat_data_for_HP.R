@@ -173,17 +173,6 @@ ins_vessels <- ins_out_data |>
 
 
 #### Ins Park tables -- reshape into hp ####
-# 
-# # map this over dep_list?
-# # reshape into HP to merge with HP tables
-# ins_cgmp_hp <- inside_tables_to_hp(ins_table = ins_cgmp, site_id = "Cod Grounds")
-# ins_simp_hp <- inside_tables_to_hp(ins_table = ins_simp, site_id = "EP")
-# ins_dne_hp <- inside_tables_to_hp(ins_table = ins_dne, site_id = "DNE")
-# ins_ngn_hp <- inside_tables_to_hp(ins_table = ins_ngn, site_id = "NGN")
-# ins_trw_hp <- inside_tables_to_hp(ins_table = ins_trw, site_id = "TRW D1")
-# ins_geo_hp <- inside_tables_to_hp(ins_table = ins_geo, site_id = "GEO")
-# ins_jur_hp <- inside_tables_to_hp(ins_table = ins_jur, site_id = "JNE")
-
 
 # get counts per site per date per hour for inside vessels
 # will it break to just try.... 
