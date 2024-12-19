@@ -12,17 +12,34 @@ library(svDialogs)
 
 Compile_Raven_selns <- function(site_id = character(), 
                                 dep_id = character()){
+  
+  # Select directory with selection tables
   dir_seln <- tk_choose.dir(caption = "Select folder with selection tables (.txt)")
-  seln_tables <- dir_seln |>
+  
+  # get list of selection tables
+  seln_table_list <- dir_seln |>
     # list all files with .txt extension
-    list.files(pattern = ".txt") |>
-    map_chr(~paste0(dir_seln,"\\",  .)) |>
-    as_tibble() |> # trying to get filenames into the equation... 
-    rename("fullpath" = "value") |>
-    mutate(filename = basename(fullpath)) |>
+    list.files(pattern = ".txt") 
+  
+  # for each table in the directory
+  seln_tables <- seln_table_list |>
+    # generate full path to files
+    map_chr(~paste0(dir_seln,"\\",  .)) |> 
     # use map to iterate read.delim() function over each file in the directory
-    map(~read.delim(.)) |> # original code resumes here
-    # map(~read.delim({.}$fullpath)) |>
+    map(~read.delim(.)) |> 
+    # set the names of each df (selection table) as file names 
+    setNames(basename(seln_table_list)) |>
+    # use imap to pull the name of each df in the list
+    # assign the df name as filename column
+    imap(~mutate(., filename = .y)) |>
+    # find first instance of "." and subset file date info from standard ST prefix (SerialNo.yymmddhhmmss....txt)
+    map(~mutate(., 
+                substart = str_locate(filename, "\\.")[1]+1,
+                subend = substart[1]+5,
+                filedate_chr = str_sub(filename, 
+                                       start = substart, 
+                                       end = subend),
+                Begin_file_date = ymd(filedate_chr))) |>
     # rename columns with funky character formatting
     map(~rename(.,"Begin_Time" = "Begin.Time..s.",
                 "End_Time" = "End.Time..s.",
@@ -32,10 +49,7 @@ Compile_Raven_selns <- function(site_id = character(),
                 "Begin_Clock" = "Begin.Clock.Time",
                 "End_Clock" = "End.Clock.Time", 
                 "Delta_Time_s" = "Delta.Time..s.")) |>
-    map(~mutate(., Begin_Date_asdate = ymd(Begin_Date))) |>
-    map(~arrange(., Begin_Date_asdate)) |> 
-    map(~mutate(., Begin_file_date = first(Begin_Date))) |>
-    map(~select(., !Begin_Date_asdate))
+    map(~select(., -c(filename, substart, subend, filedate_chr)))
   
   
   # Now we have selection tables as a list, but we want them all together in one dataframe
