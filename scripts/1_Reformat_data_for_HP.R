@@ -181,7 +181,7 @@ ins_hp <- inside_tables_to_hp(ins_table = ins_vessels)
 
 # join inside vessels to total vessels
 total_ins_hp <- hp_data |>
-  left_join(ins_vessels,
+  left_join(ins_hp,
             by = c("Dep" = "Dep_ID",
                    "Begin_Date_loc" = "Begin_Date_loc",
                    "Begin_Hour_loc" = "Begin_Hour_loc"))
