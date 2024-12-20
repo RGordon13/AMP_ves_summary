@@ -29,7 +29,7 @@ source("scripts/AMP_summary_ves_funs.R")
 #### Load compiled hourly presence table ####
 # This is generated using Reformat_data_for_HP script
 
-all_sites_hp <- read_csv("data_inputs/hourly_pres_allsites_local.csv")
+all_sites_hp <- read_csv("data_inputs/hourly_pres_allsites_local_2020-2022subset.csv")
 
 
 
@@ -48,6 +48,8 @@ all_sites_hp <- all_sites_hp |>
     ins_ves_yn = ifelse(total_inside == 0, "N","Y"),
     
     # add date without year to collapse across years
+    Month = month(Begin_Date_loc),
+    Day_month = mday(Begin_Date_loc),
     Date_noyr = as_date(paste0(Month, "-", Day_month), format = "%m-%d"),
     
     # add network for grouping/faceting later
@@ -348,17 +350,17 @@ ggplot(data = all_ves_by_weekday,
 
 ### Weekday inside
 # test plot to check whether weekday ordering worked
-ggplot(data = weekday_summary,
+ggplot(data = all_ves_by_weekday,
        mapping = aes(x = Weekday, 
-                     y = median_ins_ves_weekday)) +
-  geom_col() +
-  geom_linerange(aes(ymin = weekday_ins_lower,
-                     ymax = weekday_ins_upper))+
+                     y = Total_inside_ves_per_day)) +
+  geom_boxplot() +
+  # geom_linerange(aes(ymin = weekday_ins_lower,
+  #                    ymax = weekday_ins_upper))+
   facet_wrap(~SiteID) +
   theme_bw()
 
 # Save figure
-ggsave("Figures/inside_weekday_by_site_qt25-75_line.jpg", device = "jpeg",
+ggsave("Figures/inside_weekday_by_site_boxplot.jpg", device = "jpeg",
        width=10, height=8, units="in", dpi=300)
 
 
@@ -406,14 +408,14 @@ ggplot(data = all_diel_perc |>
 #### Heat map date vs. diel ####
 
 ggplot(all_sites_hp, 
-       aes(x = day_index, 
+       aes(x = Date_noyr , 
            y = Begin_Hour_loc, 
            fill= Total_Vessels)) +
   geom_tile()+
   scale_fill_viridis_c()+
   facet_grid(rows = vars(SiteID), scales = "free_x")+
   ylab("Begin Hour")+
-  xlab("Julian Day")+
+  xlab("Date")+
   ggtitle("Vessel Activity")+
   # scale_x_date(
   #   name="Julian Day", 
@@ -428,10 +430,30 @@ ggplot(all_sites_hp,
 
 
 # Save figure
-ggsave("Figures/Diel_Julian_heatmap.jpg", device = "jpeg",
+ggsave("Figures/Diel_allsites_heatmap.jpg", device = "jpeg",
        width=10, height=8, units="in", dpi=300)
 
 
+# boxplot diel
+ggplot(data = all_sites_hp, 
+       aes(x = Begin_Hour_loc, 
+           y = Total_Vessels,
+           group = SiteID)) +
+  geom_boxplot()+
+  # scale_fill_viridis_c()+
+  facet_grid(rows = vars(SiteID), scales = "free_x")+
+  xlab("Begin Hour")+
+  xlab("Total Vessels")+
+  theme(text=element_text(size=18), 
+        strip.background = element_rect(color = "white", fill = "black"), 
+        strip.text.x = element_text(colour = "white", face = "bold"), 
+        strip.text.y = element_text(colour = "white", face = "bold"), 
+        plot.title = element_text(hjust = 0.5))
+
+
+# Save figure
+ggsave("Figures/Diel_allsites_heatmap.jpg", device = "jpeg",
+       width=10, height=8, units="in", dpi=300)
 
 
 
