@@ -181,16 +181,19 @@ ins_hp <- inside_tables_to_hp(ins_table = ins_vessels)
 
 # join inside vessels to total vessels
 total_ins_hp <- hp_data |>
-  left_join()
+  left_join(ins_vessels,
+            by = c("Dep" = "Dep_ID",
+                   "Begin_Date_loc" = "Begin_Date_loc",
+                   "Begin_Hour_loc" = "Begin_Hour_loc"))
 
 
 
 
+# 
+# #### bring all HP data together ####
+# all_sites_hp <- as.data.frame(rbind(hp_cgmp_local, hp_simp_local,
+#                      hp_dne_local, hp_mur_local, hp_ngn_local, 
+#                      hp_trw_local, hp_sws_local, hp_geo_local, hp_jur_local))
 
-#### bring all HP data together ####
-all_sites_hp <- as.data.frame(rbind(hp_cgmp_local, hp_simp_local,
-                     hp_dne_local, hp_mur_local, hp_ngn_local, 
-                     hp_trw_local, hp_sws_local, hp_geo_local, hp_jur_local))
-
-write.csv(all_sites_hp, "data_outputs/hourly_pres_allsites_local.csv")
+write.csv(total_ins_hp, "data_outputs/hourly_pres_allsites_local.csv")
 

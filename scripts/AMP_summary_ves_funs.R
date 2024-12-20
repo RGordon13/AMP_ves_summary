@@ -170,23 +170,24 @@ inside_tables_to_hp <- function(ins_table){
                 names_expand = TRUE,
                 names_prefix = "ins_",
                 values_fill = 0) |> # expand to include a column for all possible levels
-    mutate(trans_inside = rowSums(across(c(ins_TB, ins_CPA, ins_TA, ins_TRANSIT))),
-           man_inside = rowSums(across(c(ins_TAM, ins_CPAM, ins_MANEUVER))),
-           total_inside = rowSums(across(c(trans_inside, man_inside))))
+    rename("trans_inside" = "ins_Transit",
+           "man_inside" = "ins_Maneuver") |>
+    mutate(total_inside = rowSums(across(c(trans_inside, man_inside))))
   
   # create a new df with all hours for the whole dataset
-  date_range_dep <- seq.Date(from = min(hr_tally$Begin_Date), 
-                             to = max(hr_tally$Begin_Date), by = "day") |>
+  date_range_dep <- seq.Date(from = min(hr_tally$Begin_Date_loc), 
+                             to = max(hr_tally$Begin_Date_loc), by = "day") |>
     crossing(seq(0,23,1))
   
   # rename columns
-  names(date_range_dep) <- c("Begin_Date","Begin_hour")
+  names(date_range_dep) <- c("Begin_Date_loc","Begin_Hour_loc")
   
   # join 2 data frames together to add behavior tally
   hourly_pres <- date_range_dep |>
-    left_join(hr_tally, by = c("Begin_Date","Begin_hour")) |>
-    replace_na(list(Ves_counts_inside = 0,
-                    SiteID = site_id))
+    left_join(hr_tally, by = c("Begin_Date_loc","Begin_Hour_loc")) |>
+    replace_na(list(total_inside = 0,
+                    trans_inside = 0, 
+                    man_inside = 0))
   
   return = hourly_pres
 }
