@@ -175,13 +175,11 @@ ins_vessels <- ins_out_data |>
 #### Ins Park tables -- reshape into hp ####
 
 # get counts per site per date per hour for inside vessels
-# will it break to just try.... 
-# ins_hp <- inside_tables_to_hp(ins_table = ins_vessels)
-# yes it did break. rethink this now that all data is getting reshaped together... 
+ins_hp <- inside_tables_to_hp(ins_table = ins_vessels)
 
 # join inside vessels to total vessels
 total_ins_hp <- hp_data |>
-  left_join(ins_vessels,
+  left_join(ins_hp,
             by = c("Dep" = "Dep_ID",
                    "Begin_Date_loc" = "Begin_Date_loc",
                    "Begin_Hour_loc" = "Begin_Hour_loc"))
