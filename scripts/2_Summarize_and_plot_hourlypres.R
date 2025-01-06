@@ -278,14 +278,6 @@ site_labs <- as_labeller(
 
 
 
-
-
-
-
-
-
-
-
 #### Weekday ####
 
 
@@ -307,14 +299,14 @@ ggplot(data = weekday_summary,
 # test plot to check whether weekday ordering worked
 ggplot(data = all_ves_by_weekday,
        mapping = aes(x = Weekday, 
-                     y = Total_ves_dep)) +
+                     y = Total_ves_dep, color = network)) +
   geom_boxplot()+
-  facet_wrap(~SiteID, scales = "free_y") +
+  facet_wrap(~c(network)) +
   theme_bw()
 
 # # Save figure
-# ggsave("Figures/weekday_by_site_boxplot.jpg", device = "jpeg",
-#        width=10, height=8, units="in", dpi=300)
+ggsave("Figures/weekday_by_network_boxplot.jpg", device = "jpeg",
+       width=10, height=8, units="in", dpi=300)
 
 
 # Weekday rainclouds ------------------------------------------------------
@@ -386,7 +378,8 @@ ggplot(data = all_ves_by_weekday |> filter(network == "Temperate East"),
   facet_grid(rows = vars(network),
              scales = "free_y") +
   theme_bw()
-
+ggsave("Figures/weekday_by_network_raincloud.jpg", device = "jpeg",
+       width=10, height=8, units="in", dpi=300)
 
 
 # 
@@ -396,7 +389,8 @@ ggplot(data = all_ves_by_weekday |> filter(network == "Temperate East"),
 
 
 ### Weekday inside
-# test plot to check whether weekday ordering worked
+
+# By site
 ggplot(data = all_ves_by_weekday,
        mapping = aes(x = Weekday, 
                      y = Total_inside_ves_per_day)) +
@@ -410,6 +404,20 @@ ggplot(data = all_ves_by_weekday,
 ggsave("Figures/inside_weekday_by_site_boxplot.jpg", device = "jpeg",
        width=10, height=8, units="in", dpi=300)
 
+
+# By site
+ggplot(data = all_ves_by_weekday,
+       mapping = aes(x = Weekday, 
+                     y = Total_inside_ves_per_day)) +
+  geom_boxplot() +
+  # geom_linerange(aes(ymin = weekday_ins_lower,
+  #                    ymax = weekday_ins_upper))+
+  facet_wrap(~network) +
+  theme_bw()
+
+# Save figure
+ggsave("Figures/inside_weekday_by_network_boxplot.jpg", device = "jpeg",
+       width=10, height=8, units="in", dpi=300)
 
 
 
