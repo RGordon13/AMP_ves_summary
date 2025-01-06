@@ -3,7 +3,7 @@
 #' 
 #' Summarize vessel activity across 9 marine parks
 #' 
-#' Updated Sept 2024
+#' Updated Jan 2025
 #' ---------------------------------------------------------
 
 
@@ -30,9 +30,9 @@ source("scripts/AMP_summary_ves_funs.R")
 # This is generated using Reformat_data_for_HP script
 
 all_sites_hp <- read_csv("data_inputs/All_sites_tables/hourly_pres_allsites_local.csv")
+all_sites_inout <- read_csv("data_inputs/All_sites_tables/total_ves_ins_out_by_site.csv")
 
-
-
+  
 # Reshape data for plotting -----------------------------------------------
 
 #### add columns to original dataset to help group for plotting ####
@@ -67,13 +67,13 @@ all_sites_hp <- all_sites_hp |>
 #
 # count up total vessels and vessels inside parks
 all_ves_by_site <- all_sites_hp |>
-  group_by(SiteID) |>
+  group_by(network, SiteID) |>
   summarise(n_days = n_distinct(Begin_Date_loc),
             Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
-            Total_ves_per_day = Total_ves_dep/n_days,
-            Total_inside_ves_dep = sum(total_inside, na.rm = TRUE),
-            Total_inside_ves_per_day = Total_inside_ves_dep/n_days) |>
-  mutate(ins_out_prop = Total_inside_ves_dep / Total_ves_dep)
+            # Total_ves_per_day = Total_ves_dep/n_days,
+            Total_inside_ves_dep = sum(total_inside, na.rm = TRUE))
+            # Total_inside_ves_per_day = Total_inside_ves_dep/n_days) #|>
+  # mutate(ins_out_prop = Total_inside_ves_dep / Total_ves_dep)
 
 
 
@@ -86,7 +86,7 @@ all_ves_by_site <- all_sites_hp |>
 # Proportion presence for total deployment
 all_ves_prop_hrs <- all_sites_hp |>
   # group by Begin Hour to collapse into hours
-  group_by(SiteID, ves_yn) |>
+  group_by(network, SiteID, ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
   mutate(freq = n_hours/sum(n_hours)) |>
