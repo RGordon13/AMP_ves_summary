@@ -81,11 +81,11 @@ all_ves_by_site <- all_sites_hp |>
 
 # Total vessels
 #
-# Plot: x-axis = sites, y-axis = proportion hours with vessel present (single value)
+# Plot: x-axis = sites, y-axis = proportion hours with vessel present (single value per deployment)
 #
-# Proportion presence for total deployment
+# Proportion of hours with vessel present for total deployment
 all_ves_prop_hrs <- all_sites_hp |>
-  # group by Begin Hour to collapse into hours
+  # group by y/n column
   group_by(network, SiteID, ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
@@ -97,14 +97,12 @@ all_ves_prop_hrs <- all_sites_hp |>
   # reshape for easier plotting
   pivot_longer(cols = c("freq"),
                values_to = "Perc_per_hour")
-#
-#
-#
 
-# Vessels inside parks
+
+# Vessels inside parks -- N hours with vessel inside park out of N deployment hours
 ins_ves_prop_hrs <- all_sites_hp |>
-  # group by Begin Hour to collapse into hours
-  group_by(SiteID, ins_ves_yn) |>
+  # group by y/n column to collapse into hours
+  group_by(network, SiteID, ins_ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
   mutate(freq = n_hours/sum(n_hours)) |>
@@ -122,10 +120,11 @@ ins_ves_prop_hrs <- all_sites_hp |>
 
 
 # Proportion of 'vessel hours' with inside vessels over whole deployment
-# Plot: x-axis = site, y-axis = proportion vessel hours with inside vessels (single value)
+# Plot: x-axis = site, y-axis = proportion of total vessel hours with inside vessels (single value)
+# i.e., "of all hours with a vessel, X% contain a vessel inside NPZ"
 ins_ves_prop_allves <- all_sites_hp |>
-  # group by Begin Hour to collapse into hours
-  group_by(SiteID, ves_yn, ins_ves_yn) |>
+  # group by vessel condition to get counts
+  group_by(network, SiteID, ves_yn, ins_ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
   mutate(freq = n_hours/sum(n_hours)) |>
@@ -142,10 +141,6 @@ ins_ves_prop_allves <- all_sites_hp |>
 
 
 
-
-
-
-
 #### Diel patterns ####
 
 # Percent vessels per hour of day
@@ -155,7 +150,7 @@ ins_ves_prop_allves <- all_sites_hp |>
 
 all_diel_perc <- all_sites_hp |>
   # group by Begin Hour to collapse into hours
-  group_by(SiteID, Begin_Hour_loc, ves_yn) |>
+  group_by(network, SiteID, Begin_Hour_loc, ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
   mutate(freq = n_hours/sum(n_hours)) |>
@@ -175,7 +170,7 @@ all_diel_perc <- all_sites_hp |>
 # of hours with acoustically detected vessels, __% had presence inside the park
 ins_diel_perc <- all_sites_hp |>
   # group by Begin Hour to collapse into hours
-  group_by(SiteID, Begin_Hour_loc, ves_yn, ins_ves_yn) |>
+  group_by(network, SiteID, Begin_Hour_loc, ves_yn, ins_ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
   mutate(freq = n_hours/sum(n_hours)) |>
@@ -220,22 +215,13 @@ weekday_summary <- all_ves_by_weekday |>
             median_ins_ves_weekday = median(Total_inside_ves_dep),
             weekday_ins_lower = quantile(Total_inside_ves_dep, 0.25), 
             weekday_ins_upper = quantile(Total_inside_ves_dep, 0.75)) |>
-  mutate(Weekday = factor(Weekday, levels=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")))
-levels(weekday_summary$Weekday) <- c("M","T","W","R","F","Sa","Su")
+  mutate(Weekday = factor(Weekday, levels=c("M","T","W","R","F","Sa","Su")))
 
-
-
-
-
-
-
-
-
-
-
+# Weekday proportional presence
+# of all available hours represented by X weekday, Y% had vessels present
 all_perc_weekday <- all_sites_hp |>
   # group by date 
-  group_by(SiteID, Date_noyr, Weekday, ves_yn) |>
+  group_by(network, SiteID, Weekday, ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
   mutate(freq = n_hours/sum(n_hours)) |>
@@ -248,19 +234,12 @@ all_perc_weekday <- all_sites_hp |>
                values_to = "Perc_per_hour")
 
 
+#### Patterns over deployment period ####
 
 
-
-
-
-
-
-
-# total vessels & summary stats per weekday
-
+# total vessels per week
 weekly_ves <- all_sites_hp |>  
-  mutate(day_index = yday(Begin_Date_loc),
-         iso_week = isoweek(Begin_Date_loc)) |>
+  mutate(iso_week = isoweek(Begin_Date_loc)) |>
   group_by(network, SiteID, iso_week) |>
   summarize(mean_ves = mean(Total_Vessels, na.rm = TRUE),
             med_ves = median(Total_Vessels, na.rm = TRUE),
@@ -270,7 +249,6 @@ weekly_ves <- all_sites_hp |>
 
 
 # total vessels & summary stats per day
-
 daily_ves <- all_sites_hp |>  
   group_by(network, SiteID, Date_noyr) |>
   summarize(mean_ves = mean(Total_Vessels, na.rm = TRUE),
@@ -284,8 +262,6 @@ daily_ves <- all_sites_hp |>
 # Plots -------------------------------------------------------------------
 
 #### set up useful for all plots ####
-
-
 
 # make list of site labels for plotting
 site_labs <- as_labeller(
