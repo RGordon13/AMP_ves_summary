@@ -29,7 +29,7 @@ source("scripts/AMP_summary_ves_funs.R")
 #### Load compiled hourly presence table ####
 # This is generated using Reformat_data_for_HP script
 
-all_sites_hp <- read_csv("data_inputs/hourly_pres_allsites_local_2020-2022subset.csv")
+all_sites_hp <- read_csv("data_inputs/All_sites_tables/hourly_pres_allsites_local.csv")
 
 
 
@@ -53,8 +53,8 @@ all_sites_hp <- all_sites_hp |>
     Date_noyr = as_date(paste0(Month, "-", Day_month), format = "%m-%d"),
     
     # add network for grouping/faceting later
-    network = case_when(SiteID == "Cod Grounds" | SiteID == "EP" ~ "Temperate East",
-                        SiteID == "DNE" | SiteID == "NGN" ~ "Northwest",
+    network = case_when(SiteID == "CGMP" | SiteID == "SIMP_EP" | SiteID == "SIMP_WP" ~ "Temperate East",
+                        SiteID == "DNE" | SiteID == "DSW" | SiteID == "NGN"| SiteID == "NGS" ~ "Northwest",
                         TRUE ~ "South-west"
     ))
 
@@ -201,7 +201,7 @@ ins_diel_perc <- all_sites_hp |>
 #
 # count up total vessels and vessels inside parks
 all_ves_by_weekday <- all_sites_hp |>
-  group_by(SiteID, Date_noyr, Weekday) |>
+  group_by(network, SiteID, Date_noyr, Weekday) |>
   summarise(n_days = n_distinct(Date_noyr),
             Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
             Total_ves_per_day = Total_ves_dep/n_days,
@@ -211,7 +211,7 @@ all_ves_by_weekday <- all_sites_hp |>
 levels(all_ves_by_weekday$Weekday) <- c("M","T","W","R","F","Sa","Su")
 
 weekday_summary <- all_ves_by_weekday |>
-  group_by(SiteID, Weekday) |>
+  group_by(network, SiteID, Weekday) |>
   summarise(total_weekday = sum(Total_ves_dep),
             median_ves_weekday = median(Total_ves_dep),
             weekday_lower = quantile(Total_ves_dep, 0.25), 
@@ -221,7 +221,7 @@ weekday_summary <- all_ves_by_weekday |>
             weekday_ins_lower = quantile(Total_inside_ves_dep, 0.25), 
             weekday_ins_upper = quantile(Total_inside_ves_dep, 0.75)) |>
   mutate(Weekday = factor(Weekday, levels=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")))
-levels(all_ves_by_weekday$Weekday) <- c("M","T","W","R","F","Sa","Su")
+levels(weekday_summary$Weekday) <- c("M","T","W","R","F","Sa","Su")
 
 
 
@@ -269,10 +269,10 @@ weekly_ves <- all_sites_hp |>
             sd_upper = mean_ves + (0.5*sd_ves))
 
 
-# total vessels & summary stats per Julian day
+# total vessels & summary stats per day
 
 daily_ves <- all_sites_hp |>  
-  group_by(network, SiteID, day_index) |>
+  group_by(network, SiteID, Date_noyr) |>
   summarize(mean_ves = mean(Total_Vessels, na.rm = TRUE),
             med_ves = median(Total_Vessels, na.rm = TRUE),
             sd_ves = sd(Total_Vessels, na.rm = TRUE),
@@ -289,7 +289,7 @@ daily_ves <- all_sites_hp |>
 
 # make list of site labels for plotting
 site_labs <- as_labeller(
-  c("Cod Grounds" = "Cod Grounds", 
+  c("CG" = "Cod Grounds", 
     "DNE" = "Dampier", 
     "EP" = "Solitary \nIslands",
     "MRE" = "Murat",
@@ -333,19 +333,90 @@ ggplot(data = all_ves_by_weekday,
        mapping = aes(x = Weekday, 
                      y = Total_ves_dep)) +
   geom_boxplot()+
-  # geom_ribbon(aes(ymin = weekday_lower,
-  #                 ymax = weekday_upper),
-  #             fill = "grey75")+
-  # geom_linerange(aes(ymin = weekday_lower,
-  #                    ymax = weekday_upper))+
-  # geom_line() +
-  # geom_point() +
   facet_wrap(~SiteID, scales = "free_y") +
   theme_bw()
 
 # # Save figure
 # ggsave("Figures/weekday_by_site_boxplot.jpg", device = "jpeg",
 #        width=10, height=8, units="in", dpi=300)
+
+
+# Weekday rainclouds ------------------------------------------------------
+
+
+# What about a raincloud plot for all sites combined? 
+# or maybe facet/color by network?
+library(ggdist)
+
+# start with boxplot
+ggplot(data = all_ves_by_weekday,
+       mapping = aes(x = Weekday, 
+                     y = Total_ves_dep,
+                     color = network)) +
+  # add half violin to plot alongside boxplot 
+  ggdist::stat_halfeye(aes(fill = network),
+                       alpha = 0.5,
+                       width = 0.4, # adjust height
+                       # justification = -0.2, # move to the right
+                       # .width = 0 # remove slab interval
+                       )+
+  # add skinny boxplot
+  geom_boxplot(width = 0.15,
+               alpha = 0.3,
+               outlier.colour = NA)+ 
+
+    # add rain to raincloud
+  ggdist::stat_dots(
+    aes(fill = network),
+    # point to the left
+    side = "left",
+    # move to the left
+    justification = 1.1,
+    binwidth = 0.1,
+    layout = "hex",
+    overflow = "compress") +
+  facet_grid(rows = vars(network),
+             scales = "free_y") +
+  theme_bw()
+
+
+# start with boxplot
+ggplot(data = all_ves_by_weekday |> filter(network == "Temperate East"),
+       mapping = aes(x = Weekday, 
+                     y = Total_ves_dep,
+                     color = network)) +
+  # add half violin to plot alongside boxplot 
+  ggdist::stat_halfeye(aes(fill = network),
+                       alpha = 0.5,
+                       width = 0.4, # adjust height
+                       # justification = -0.2, # move to the right
+                       # .width = 0 # remove slab interval
+  )+
+  # add skinny boxplot
+  geom_boxplot(width = 0.15,
+               alpha = 0.3,
+               outlier.colour = NA)+ 
+  
+  # add rain to raincloud
+  ggdist::stat_dots(
+    aes(fill = network),
+    # point to the left
+    side = "left",
+    # move to the left
+    justification = 1.1,
+    binwidth = 0.3,
+    layout = "hex",
+    overflow = "compress") +
+  facet_grid(rows = vars(network),
+             scales = "free_y") +
+  theme_bw()
+
+
+
+# 
+#   #add raw data as overlay
+#   geom_point(alpha = 0.2,
+#              position = position_jitter(seed = 1, width = 0.2))
 
 
 ### Weekday inside
