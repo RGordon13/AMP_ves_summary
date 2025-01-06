@@ -3,7 +3,8 @@
 #' 
 #' Summarize vessel activity across 9 marine parks
 #' 
-#' Updated Dec 2024
+#' Updated Jan 2025
+#' J. McCordic
 #' ---------------------------------------------------------
 
 
@@ -13,7 +14,7 @@
 tidyverse_short<-c("broom","cli","crayon","dbplyr","dplyr","dtplyr","forcats","ggplot2","googledrive","googlesheets4","hms","httr","jsonlite","lubridate","magrittr","modelr","pillar","purrr","readr","readxl","reprex","rlang","rstudioapi","rvest","stringr","tibble","tidyr","xml2") 
 lapply(tidyverse_short, require, character.only = TRUE) 
 
-# source helper file
+# source helper file with various data wrangling functions
 source("scripts/AMP_summary_ves_funs.R")
 
 #### Load in data ####
@@ -63,7 +64,7 @@ ins_out_og <- dep_info |>
 
 
 #### Add some columns, update time zone ####
-# making this to be able to add column names
+# making new_cols placeholders to add into original df if they don't exist
 new_cols <- c("Maneuver" = 0,"Transit" = 0, "Not_Assigned" = 0)
 hp_allcols <- hp_og |>
   # add columns for Transit and Maneuver if they don't exist
@@ -185,13 +186,6 @@ total_ins_hp <- hp_data |>
                    "Begin_Hour_loc" = "Begin_Hour_loc"))
 
 
-
-
-# 
-# #### bring all HP data together ####
-# all_sites_hp <- as.data.frame(rbind(hp_cgmp_local, hp_simp_local,
-#                      hp_dne_local, hp_mur_local, hp_ngn_local, 
-#                      hp_trw_local, hp_sws_local, hp_geo_local, hp_jur_local))
-
+# save CSV with all sites' hourly presence (total & inside NPZ)
 write.csv(total_ins_hp, "data_outputs/hourly_pres_allsites_local.csv")
 
