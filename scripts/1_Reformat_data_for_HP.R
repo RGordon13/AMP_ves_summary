@@ -88,7 +88,7 @@ hp_data <- hp_allcols |>
        ~mutate(.x,
                Site_ID = {.y}$site_id, 
                Dep_ID = {.y}$dep_id,
-               Total_Vessels = rowSums(across(c(TR, M))),
+               Total_Vessels = rowSums(across(TR:M)),
                # create y/n column for vessel presence
                ves_yn = ifelse(Total_Vessels == 0, "N", "Y"),
                # pull hour as time object along with date
