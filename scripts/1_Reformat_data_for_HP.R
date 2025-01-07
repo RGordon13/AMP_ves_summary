@@ -161,8 +161,8 @@ ins_out_data <- ins_out_og |>
 # write csv for easier input later
 write.csv(ins_out_data, "data_outputs/total_ves_ins_out_by_site.csv")
 
-
-ins_vessels <- ins_out_data |>
+# Small vessels
+ins_vessels_small <- ins_out_data |>
   filter(used == 1) |>
   filter(pins_sm >= 0.75) |>
   mutate(begin_file_date = ymd(str_sub(Date, 1,6)),
@@ -172,15 +172,36 @@ ins_vessels <- ins_out_data |>
                    "seln_num" = "Selection", 
                    "begin_file_date" = "Begin_file_date"))
 
+# Small or medium vessels
+ins_vessels_smmed <- ins_out_data |>
+  filter(used == 1) |>
+  filter(pins_ovrll >= 0.75) |>
+  mutate(begin_file_date = ymd(str_sub(Date, 1,6)),
+         seln_num = as.numeric(gsub(pattern = "S", replacement = "", x = Selection)))|>
+  left_join(selns_data, 
+            by = c("Dep_ID" = "Dep",
+                   "seln_num" = "Selection", 
+                   "begin_file_date" = "Begin_file_date"))
+
 
 #### Ins Park tables -- reshape into hp ####
 
 # get counts per site per date per hour for inside vessels
-ins_hp <- inside_tables_to_hp(ins_table = ins_vessels)
+# Small vessels
+ins_hp_small <- inside_tables_to_hp(ins_table = ins_vessels_small) |>
+  rename("man_inside_small" = "man_inside",
+         "trans_inside_small" = "trans_inside",
+         "total_inside_small" = "total_inside")
+# Small or medium vessels
+ins_hp_smmed <- inside_tables_to_hp(ins_table = ins_vessels_smmed)
 
 # join inside vessels to total vessels
 total_ins_hp <- hp_data |>
-  left_join(ins_hp,
+  left_join(ins_hp_small,
+            by = c("Dep" = "Dep_ID",
+                   "Begin_Date_loc" = "Begin_Date_loc",
+                   "Begin_Hour_loc" = "Begin_Hour_loc")) |>
+  left_join(ins_hp_smmed,
             by = c("Dep" = "Dep_ID",
                    "Begin_Date_loc" = "Begin_Date_loc",
                    "Begin_Hour_loc" = "Begin_Hour_loc"))
