@@ -19,8 +19,11 @@ lapply(tidyverse_short, require, character.only = TRUE)
 library(scales)
 library(ggalt)
 library(ggsci)
+library(ggdist)
 
-
+theme_set(theme_bw(
+  base_size = 14
+))
 
 # source helper file
 source("scripts/AMP_summary_ves_funs.R")
@@ -35,7 +38,7 @@ all_sites_inout <- read_csv("data_inputs/All_sites_tables/total_ves_ins_out_by_s
   
 # Reshape data for plotting -----------------------------------------------
 
-#### add columns to original dataset to help group for plotting ####
+#### Add columns to original dataset to help group for plotting ####
 
 all_sites_hp <- all_sites_hp |>
   mutate(
@@ -50,6 +53,7 @@ all_sites_hp <- all_sites_hp |>
     
     # add date without year to collapse across years
     Month = month(Begin_Date_loc),
+    Week = isoweek(Begin_Date_loc),
     Day_month = mday(Begin_Date_loc),
     Date_noyr = as_date(paste0(Month, "-", Day_month), format = "%m-%d"),
     
@@ -89,13 +93,101 @@ all_sites_hp <- all_sites_hp |>
 #
 # count up total vessels and vessels inside parks
 all_ves_by_site <- all_sites_hp |>
-  group_by(network, SiteID) |>
+  group_by(network, npz_id, Site_ID, Dep) |>
   summarise(n_days = n_distinct(Begin_Date_loc),
             Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
-            # Total_ves_per_day = Total_ves_dep/n_days,
-            Total_inside_ves_dep = sum(total_inside, na.rm = TRUE))
-            # Total_inside_ves_per_day = Total_inside_ves_dep/n_days) #|>
-  # mutate(ins_out_prop = Total_inside_ves_dep / Total_ves_dep)
+            Total_inside_ves_dep = sum(total_inside, na.rm = TRUE),
+            Total_inside_ves_small = sum(total_inside_small, na.rm = TRUE))
+
+ggplot(data = all_ves_by_site,
+       aes(x = Dep,
+           y = Total_ves_dep,
+           fill = npz_id)) +
+  geom_col(show.legend = FALSE,
+           color = "black") +
+  scale_fill_viridis_d()+
+  facet_grid(~network, 
+             scales = "free_x", 
+             space = "free", 
+             drop = TRUE) +
+  labs(x = "NPZ",
+       y = "N vessels") +
+  theme(
+    axis.text.x = element_text(angle = 90),
+    strip.text.x = element_text(face = "bold")
+    )
+
+
+# Total Vessels per week for plots
+all_ves_by_week <- all_sites_hp |>
+  group_by(network, npz_id, Site_ID, Dep, Week) |>
+  summarise(n_days = n_distinct(Begin_Date_loc),
+            Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
+            Total_inside_ves_dep = sum(total_inside, na.rm = TRUE),
+            Total_inside_ves_small = sum(total_inside_small, na.rm = TRUE)
+            ) |>
+  mutate(
+    network = fct(network),
+    network = fct_relevel(network, c("Temperate East","Northwest"))
+  )
+
+ggplot(data = all_ves_by_week,
+       aes(x = npz_id,
+           y = Total_ves_dep,
+           fill = network,
+           color = network))+
+  geom_boxplot(aes(group = Dep),
+               alpha = 0.5)+
+  scale_fill_viridis_d(guide = "none")+
+  scale_color_viridis_d(guide = "none")+
+  facet_grid(~network, 
+             scales = "free_x", 
+             space = "free", 
+             drop = TRUE) +
+  labs(x = "NPZ",
+       y = "N vessels per week") +
+  theme(
+    strip.text.x = element_text(face = "bold"),
+    axis.text.x = element_text(face = "bold")
+  )
+
+
+
+
+# Total Vessels per day for plots
+all_ves_by_date <- all_sites_hp |>
+  group_by(network, npz_id, Site_ID, Dep, Date_noyr) |>
+  summarise(n_days = n_distinct(Begin_Date_loc),
+            Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
+            Total_inside_ves_dep = sum(total_inside, na.rm = TRUE),
+            Total_inside_ves_small = sum(total_inside_small, na.rm = TRUE)
+  ) |>
+  mutate(
+    network = fct(network),
+    network = fct_relevel(network, c("Temperate East","Northwest")),
+    Date_noyr = as.Date(Date_noyr, format = "%Y-%m-%d")
+  ) 
+
+ggplot(data = all_ves_by_date,
+       aes(x = Date_noyr,
+           y = Total_ves_dep,
+           fill = network))+
+  geom_col(aes(group = Dep),
+               alpha = 0.5,
+           position = position_identity(),
+           show.legend = FALSE)+
+  scale_fill_viridis_d(guide = "none")+
+  # scale_x_date(minor_breaks = "2 weeks") +
+  labs(x = "Date",
+       y = "N vessels per day") +
+  theme(
+    strip.text.y = element_text(face = "bold"),
+    axis.text.x = element_text(face = "bold")
+  ) +
+  facet_grid(rows = vars(network), 
+             # scales = "free_y",
+             # space = "free", 
+             drop = TRUE)
 
 
 
