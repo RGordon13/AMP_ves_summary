@@ -46,6 +46,7 @@ all_sites_hp <- all_sites_hp |>
     # add categorical Y/N column for vessels present to calculate proportions
     ves_yn = ifelse(Total_Vessels == 0, "N","Y"),
     ins_ves_yn = ifelse(total_inside == 0, "N","Y"),
+    ins_ves_small_yn = ifelse(total_inside_small == 0, "N","Y"),
     
     # add date without year to collapse across years
     Month = month(Begin_Date_loc),
@@ -53,10 +54,31 @@ all_sites_hp <- all_sites_hp |>
     Date_noyr = as_date(paste0(Month, "-", Day_month), format = "%m-%d"),
     
     # add network for grouping/faceting later
-    network = case_when(SiteID == "CGMP" | SiteID == "SIMP_EP" | SiteID == "SIMP_WP" ~ "Temperate East",
-                        SiteID == "DNE" | SiteID == "DSW" | SiteID == "NGN"| SiteID == "NGS" ~ "Northwest",
+    network = case_when(Site_ID == "CG" | Site_ID == "EP" | Site_ID == "WP" ~ "Temperate East",
+                        Site_ID == "DNE" | Site_ID == "DSW" | Site_ID == "NGN"| Site_ID == "NGS" ~ "Northwest",
                         TRUE ~ "South-west"
-    ))
+    ),
+    npz_id = case_when(
+      # Cod Grounds
+      Site_ID == "CG" ~ "CGMP", 
+      # Solitary Islands
+      Site_ID == "EP" | Site_ID == "WP" ~ "SIMP",
+      # Dampier
+      Site_ID == "DNE" | Site_ID == "DSW" ~ "DMP",
+      # Ningaloo
+      Site_ID == "NGN"| Site_ID == "NGS" ~ "NMP", 
+      # Two Rocks
+      Site_ID == "TRE" | Site_ID == "TRW" ~ "TRMP", 
+      # Jurien
+      Site_ID == "JSE" | Site_ID == "JNE" ~ "JMP", 
+      # Geographe
+      Site_ID == "GEO" ~ "GMP",
+      # Murat
+      Site_ID == "MRE" | Site_ID == "MRW" ~ "MMP",
+      # South-west Corner
+      Site_ID == "SWS" ~ "SWCMP" 
+    )
+  )
 
 
 
