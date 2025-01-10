@@ -200,30 +200,62 @@ ggplot(data = all_ves_by_date,
 # Proportion of hours with vessel present for total deployment
 all_ves_prop_hrs <- all_sites_hp |>
   # group by y/n column
-  group_by(network, SiteID, ves_yn) |>
+  group_by(network, npz_id, Site_ID, Dep, Week, ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
   mutate(freq = n_hours/sum(n_hours)) |>
   ungroup() |>
-  complete(SiteID, ves_yn,
+  complete(Site_ID, ves_yn,
            fill = list(ves_yn = "Y", freq = 0)) |>
-  group_by(SiteID, ves_yn) |>
+  group_by(Site_ID, ves_yn) |>
   # reshape for easier plotting
   pivot_longer(cols = c("freq"),
-               values_to = "Perc_per_hour")
+               values_to = "Perc_per_hour") |>
+  mutate(network = factor(network, levels = c("Temperate East","Northwest","South-west")))
+
+
+
+
+ggplot(data = all_ves_prop_hrs |> filter(ves_yn == "Y"),
+       aes(x = npz_id,
+           y = Perc_per_hour,
+           fill = network,
+           color = network))+
+  geom_boxplot(
+    # aes(group = Dep),
+    position = position_dodge2(preserve = "single"),
+    alpha = 0.5,
+    width = 0.5,
+    outliers = FALSE)+
+  geom_point(alpha = 0.5, 
+             position = position_jitter(width = 0.1)) +
+  scale_fill_viridis_d(end = 0.75,
+                       guide = "none")+
+  scale_color_viridis_d(end = 0.75,
+                        guide = "none")+
+  facet_grid(~network, 
+             scales = "free_x", 
+             space = "free", 
+             drop = TRUE) +
+  labs(x = "NPZ",
+       y = "Proportion hours per week with vessels") +
+  theme(
+    strip.text.x = element_text(face = "bold"),
+    axis.text.x = element_text(face = "bold")
+  )
 
 
 # Vessels inside parks -- N hours with vessel inside park out of N deployment hours
 ins_ves_prop_hrs <- all_sites_hp |>
   # group by y/n column to collapse into hours
-  group_by(network, SiteID, ins_ves_yn) |>
+  group_by(network, npz_id, Site_ID, Dep, ins_ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
   mutate(freq = n_hours/sum(n_hours)) |>
   ungroup() |>
-  complete(SiteID, ins_ves_yn,
+  complete(Site_ID, ins_ves_yn,
            fill = list(ins_ves_yn = "Y", freq = 0)) |>
-  group_by(SiteID, ins_ves_yn) |>
+  group_by(Site_ID, ins_ves_yn) |>
   # reshape for easier plotting
   pivot_longer(cols = c("freq"),
                values_to = "Perc_per_hour")
