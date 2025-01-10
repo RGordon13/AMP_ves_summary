@@ -213,9 +213,7 @@ all_ves_prop_hrs <- all_sites_hp |>
                values_to = "Perc_per_hour") |>
   mutate(network = factor(network, levels = c("Temperate East","Northwest","South-west")))
 
-
-
-
+# Try to plot!
 ggplot(data = all_ves_prop_hrs |> filter(ves_yn == "Y"),
        aes(x = npz_id,
            y = Perc_per_hour,
@@ -230,8 +228,10 @@ ggplot(data = all_ves_prop_hrs |> filter(ves_yn == "Y"),
   geom_point(alpha = 0.5, 
              position = position_jitter(width = 0.1)) +
   scale_fill_viridis_d(end = 0.75,
+                       direction = -1,
                        guide = "none")+
   scale_color_viridis_d(end = 0.75,
+                        direction = -1,
                         guide = "none")+
   facet_grid(~network, 
              scales = "free_x", 
@@ -244,11 +244,16 @@ ggplot(data = all_ves_prop_hrs |> filter(ves_yn == "Y"),
     axis.text.x = element_text(face = "bold")
   )
 
+ggsave(paste0("Figures/", "Weekly_prop_hrs_npz_ntwk.png"), width=10, height=8,
+       units="in", dpi=300)
+
+
+
 
 # Vessels inside parks -- N hours with vessel inside park out of N deployment hours
 ins_ves_prop_hrs <- all_sites_hp |>
   # group by y/n column to collapse into hours
-  group_by(network, npz_id, Site_ID, Dep, ins_ves_yn) |>
+  group_by(network, npz_id, Site_ID, Dep, Week, ins_ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
   mutate(freq = n_hours/sum(n_hours)) |>
@@ -258,10 +263,78 @@ ins_ves_prop_hrs <- all_sites_hp |>
   group_by(Site_ID, ins_ves_yn) |>
   # reshape for easier plotting
   pivot_longer(cols = c("freq"),
-               values_to = "Perc_per_hour")
+               values_to = "Perc_per_hour") |>
+  # add network for grouping/faceting later
+  mutate(
+    network = case_when(Site_ID == "CG" | Site_ID == "EP" | Site_ID == "WP" ~ "Temperate East",
+                        Site_ID == "DNE" | Site_ID == "DSW" | Site_ID == "NGN"| Site_ID == "NGS" ~ "Northwest",
+                        TRUE ~ "South-west"
+    ),
+    network = factor(network, levels = c("Temperate East","Northwest","South-west")),
+    npz_id = case_when(
+      # Cod Grounds
+      Site_ID == "CG" ~ "CGMP", 
+      # Solitary Islands
+      Site_ID == "EP" | Site_ID == "WP" ~ "SIMP",
+      # Dampier
+      Site_ID == "DNE" | Site_ID == "DSW" ~ "DMP",
+      # Ningaloo
+      Site_ID == "NGN"| Site_ID == "NGS" ~ "NMP", 
+      # Two Rocks
+      Site_ID == "TRE" | Site_ID == "TRW" ~ "TRMP", 
+      # Jurien
+      Site_ID == "JSE" | Site_ID == "JNE" ~ "JMP", 
+      # Geographe
+      Site_ID == "GEO" ~ "GMP",
+      # Murat
+      Site_ID == "MRE" | Site_ID == "MRW" ~ "MMP",
+      # South-west Corner
+      Site_ID == "SWS" ~ "SWCMP" 
+    )
+  )
 #
 #
 #
+
+
+# Try to plot!
+ggplot(data = ins_ves_prop_hrs |> filter(ins_ves_yn == "Y"),
+       aes(x = npz_id,
+           y = Perc_per_hour,
+           fill = network,
+           color = network))+
+  geom_boxplot(
+    # aes(group = Dep),
+    position = position_dodge2(preserve = "single"),
+    alpha = 0.5,
+    width = 0.5,
+    outliers = FALSE)+
+  geom_point(alpha = 0.5, 
+             position = position_jitter(width = 0.1)) +
+  scale_fill_viridis_d(end = 0.75,
+                       direction = -1,
+                       guide = "none")+
+  scale_color_viridis_d(end = 0.75,
+                        direction = -1,
+                        guide = "none")+
+  facet_grid(~network, 
+             scales = "free_x", 
+             space = "free", 
+             drop = TRUE) +
+  labs(x = "NPZ",
+       y = "Proportion hours per week \nwith vessels inside NPZ") +
+  theme(
+    strip.text.x = element_text(face = "bold"),
+    axis.text.x = element_text(face = "bold")
+  )
+
+ggsave(paste0("Figures/", "Weekly_prop_hrs_npz_ntwk_ins.png"), width=10, height=8,
+       units="in", dpi=300)
+
+
+
+
+
 
 
 
