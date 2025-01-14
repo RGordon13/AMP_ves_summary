@@ -176,9 +176,12 @@ ggplot(data = all_ves_by_date,
   geom_col(aes(group = Dep),
                alpha = 0.5,
            position = position_identity(),
+           width = 1,
            show.legend = FALSE)+
-  scale_fill_viridis_d(guide = "none")+
-  # scale_x_date(minor_breaks = "2 weeks") +
+  scale_fill_viridis_d(end = 0.75,
+                       direction = -1,
+                       guide = "none")+
+  scale_x_date(date_labels = '%b-%d') +
   labs(x = "Date",
        y = "N vessels per day") +
   theme(
@@ -190,6 +193,8 @@ ggplot(data = all_ves_by_date,
              # space = "free", 
              drop = TRUE)
 
+ggsave(paste0("Figures/", "Daily_counts_npz_ntwk.png"), width=10, height=6,
+       units="in", dpi=300)
 
 
 #### Proportion presence ####
@@ -418,10 +423,71 @@ ggsave(paste0("Figures/", "Weekly_prop_hrs_npz_ntwk_ins_small.png"), width=10, h
        units="in", dpi=300)
 
 
+#### Weekday patterns ####
+
+# Weekday totals
+
+# count up total vessels and vessels inside parks by weekday
+all_ves_by_weekday <- all_sites_hp |>
+  group_by(network, npz_id, Site_ID, Dep, Date_noyr, Weekday) |>
+  summarise(n_days = n_distinct(Date_noyr),
+            Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
+            Total_ves_per_day = Total_ves_dep/n_days,
+            Total_inside_ves_dep = sum(total_inside, na.rm = TRUE),
+            Total_inside_ves_per_day = Total_inside_ves_dep/n_days) |>
+  mutate(Weekday = factor(Weekday, levels=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")))
+levels(all_ves_by_weekday$Weekday) <- c("M","T","W","R","F","Sa","Su")
+
+weekday_summary <- all_ves_by_weekday |>
+  group_by(network, npz_id, Site_ID, Dep, Date_noyr, Weekday) |>
+  summarise(total_weekday = sum(Total_ves_dep),
+            median_ves_weekday = median(Total_ves_dep),
+            weekday_lower = quantile(Total_ves_dep, 0.25), 
+            weekday_upper = quantile(Total_ves_dep, 0.75),
+            total_ins_weekday = sum(Total_inside_ves_dep),
+            median_ins_ves_weekday = median(Total_inside_ves_dep),
+            weekday_ins_lower = quantile(Total_inside_ves_dep, 0.25), 
+            weekday_ins_upper = quantile(Total_inside_ves_dep, 0.75)) |>
+  mutate(Weekday = factor(Weekday, levels=c("M","T","W","R","F","Sa","Su")))
+
+# Weekday proportional presence
+# of all available hours represented by X weekday, Y% had vessels present
+all_perc_weekday <- all_sites_hp |>
+  # group by date 
+  group_by(network, npz_id, Site_ID, Dep, Date_noyr, Weekday, ves_yn) |>
+  # get total number of hours for Y and N groups per each hour per deployment
+  summarize(n_hours = n())|>
+  mutate(freq = n_hours/sum(n_hours)) |>
+  ungroup() |>
+  complete(Dep, Weekday, ves_yn,
+           fill = list(ves_yn = "Y", freq = 0)) |>
+  group_by(network, npz_id, Site_ID, Dep, Date_noyr, Weekday, ves_yn) |>
+  # reshape for easier plotting
+  pivot_longer(cols = c("freq"),
+               values_to = "Perc_per_hour")
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#### OLDER PLOTS BELOW HERE ####
 # Proportion of 'vessel hours' with inside vessels over whole deployment
 # Plot: x-axis = site, y-axis = proportion of total vessel hours with inside vessels (single value)
 # i.e., "of all hours with a vessel, X% contain a vessel inside NPZ"
@@ -491,50 +557,6 @@ ins_diel_perc <- all_sites_hp |>
 
 
 
-#### Weekday patterns ####
-
-# Weekday totals
-
-# Plot: x-axis = weekday, y-axis = median +/- 25th - 75th percentiles (single value)
-#
-# count up total vessels and vessels inside parks
-all_ves_by_weekday <- all_sites_hp |>
-  group_by(network, SiteID, Date_noyr, Weekday) |>
-  summarise(n_days = n_distinct(Date_noyr),
-            Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
-            Total_ves_per_day = Total_ves_dep/n_days,
-            Total_inside_ves_dep = sum(total_inside, na.rm = TRUE),
-            Total_inside_ves_per_day = Total_inside_ves_dep/n_days) |>
-  mutate(Weekday = factor(Weekday, levels=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")))
-levels(all_ves_by_weekday$Weekday) <- c("M","T","W","R","F","Sa","Su")
-
-weekday_summary <- all_ves_by_weekday |>
-  group_by(network, SiteID, Weekday) |>
-  summarise(total_weekday = sum(Total_ves_dep),
-            median_ves_weekday = median(Total_ves_dep),
-            weekday_lower = quantile(Total_ves_dep, 0.25), 
-            weekday_upper = quantile(Total_ves_dep, 0.75),
-            total_ins_weekday = sum(Total_inside_ves_dep),
-            median_ins_ves_weekday = median(Total_inside_ves_dep),
-            weekday_ins_lower = quantile(Total_inside_ves_dep, 0.25), 
-            weekday_ins_upper = quantile(Total_inside_ves_dep, 0.75)) |>
-  mutate(Weekday = factor(Weekday, levels=c("M","T","W","R","F","Sa","Su")))
-
-# Weekday proportional presence
-# of all available hours represented by X weekday, Y% had vessels present
-all_perc_weekday <- all_sites_hp |>
-  # group by date 
-  group_by(network, SiteID, Weekday, ves_yn) |>
-  # get total number of hours for Y and N groups per each hour per deployment
-  summarize(n_hours = n())|>
-  mutate(freq = n_hours/sum(n_hours)) |>
-  ungroup() |>
-  complete(SiteID, Weekday, ves_yn,
-           fill = list(ves_yn = "Y", freq = 0)) |>
-  group_by(SiteID, Weekday, ves_yn) |>
-  # reshape for easier plotting
-  pivot_longer(cols = c("freq"),
-               values_to = "Perc_per_hour")
 
 
 #### Patterns over deployment period ####
