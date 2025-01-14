@@ -155,9 +155,9 @@ ggplot(data = all_ves_by_week,
 
 
 
-# Total Vessels per day for plots
+#### By Date ####
 all_ves_by_date <- all_sites_hp |>
-  group_by(network, npz_id, Site_ID, Dep, Date_noyr) |>
+  group_by(network, npz_id, Site_ID, Dep, Week, Date_noyr) |>
   summarise(n_days = n_distinct(Begin_Date_loc),
             Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
             Total_inside_ves_dep = sum(total_inside, na.rm = TRUE),
@@ -195,6 +195,41 @@ ggplot(data = all_ves_by_date,
 
 ggsave(paste0("Figures/", "Daily_counts_npz_ntwk.png"), width=10, height=6,
        units="in", dpi=300)
+
+
+# Try weekly boxplots instead of individual dates #
+ggplot(data = all_ves_by_date,
+       aes(x = Date_noyr,
+           y = Total_ves_dep,
+           fill = network))+
+  geom_boxplot(aes(group = Week,
+                   color = network),
+               position = position_dodge2(preserve = "single"),
+               alpha = 0.5,
+               width = 1,
+               show.legend = FALSE)+
+  scale_fill_viridis_d(end = 0.75,
+                       direction = -1,
+                       guide = "none")+
+  scale_color_viridis_d(end = 0.75,
+                       direction = -1,
+                       guide = "none")+
+  scale_x_date(date_labels = '%b-%d') +
+  labs(x = "Date",
+       y = "N vessels per day") +
+  theme(
+    strip.text.y = element_text(face = "bold"),
+    axis.text.x = element_text(face = "bold")
+  ) +
+  facet_grid(rows = vars(network), 
+             # scales = "free_y",
+             # space = "free", 
+             drop = TRUE)
+
+ggsave(paste0("Figures/", "Weekly_boxplots_npz_ntwk.png"), width=10, height=6,
+       units="in", dpi=300)
+
+
 
 
 #### Proportion presence ####
