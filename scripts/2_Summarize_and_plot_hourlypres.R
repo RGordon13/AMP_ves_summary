@@ -470,7 +470,12 @@ all_ves_by_weekday <- all_sites_hp |>
             Total_ves_per_day = Total_ves_dep/n_days,
             Total_inside_ves_dep = sum(total_inside, na.rm = TRUE),
             Total_inside_ves_per_day = Total_inside_ves_dep/n_days) |>
-  mutate(Weekday = factor(Weekday, levels=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")))
+  mutate(Weekday = factor(Weekday, levels=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")),
+           network = case_when(Site_ID == "CG" | Site_ID == "EP" | Site_ID == "WP" ~ "Temperate East",
+                               Site_ID == "DNE" | Site_ID == "DSW" | Site_ID == "NGN"| Site_ID == "NGS" ~ "Northwest",
+                               TRUE ~ "South-west"
+           ),
+         network = factor(network, levels = c("Temperate East","Northwest","South-west")))
 levels(all_ves_by_weekday$Weekday) <- c("M","T","W","R","F","Sa","Su")
 
 weekday_summary <- all_ves_by_weekday |>
@@ -483,32 +488,112 @@ weekday_summary <- all_ves_by_weekday |>
             median_ins_ves_weekday = median(Total_inside_ves_dep),
             weekday_ins_lower = quantile(Total_inside_ves_dep, 0.25), 
             weekday_ins_upper = quantile(Total_inside_ves_dep, 0.75)) |>
-  mutate(Weekday = factor(Weekday, levels=c("M","T","W","R","F","Sa","Su")))
+  mutate(Weekday = factor(Weekday, levels=c("M","T","W","R","F","Sa","Su")),
+         network = case_when(Site_ID == "CG" | Site_ID == "EP" | Site_ID == "WP" ~ "Temperate East",
+                             Site_ID == "DNE" | Site_ID == "DSW" | Site_ID == "NGN"| Site_ID == "NGS" ~ "Northwest",
+                             TRUE ~ "South-west"
+         ),
+         network = factor(network, levels = c("Temperate East","Northwest","South-west")))
 
 # Weekday proportional presence
 # of all available hours represented by X weekday, Y% had vessels present
 all_perc_weekday <- all_sites_hp |>
   # group by date 
-  group_by(network, npz_id, Site_ID, Dep, Date_noyr, Weekday, ves_yn) |>
+  group_by(network, npz_id, Site_ID, Dep, Weekday, ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
   mutate(freq = n_hours/sum(n_hours)) |>
   ungroup() |>
   complete(Dep, Weekday, ves_yn,
            fill = list(ves_yn = "Y", freq = 0)) |>
-  group_by(network, npz_id, Site_ID, Dep, Date_noyr, Weekday, ves_yn) |>
+  group_by(network, npz_id, Site_ID, Dep, Weekday, ves_yn) |>
   # reshape for easier plotting
   pivot_longer(cols = c("freq"),
-               values_to = "Perc_per_hour")
+               values_to = "Perc_per_hour") |>
+  mutate(Weekday = factor(Weekday, levels=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")),
+          network = case_when(Site_ID == "CG" | Site_ID == "EP" | Site_ID == "WP" ~ "Temperate East",
+                              Site_ID == "DNE" | Site_ID == "DSW" | Site_ID == "NGN"| Site_ID == "NGS" ~ "Northwest",
+                              TRUE ~ "South-west"
+          ),
+          network = factor(network, levels = c("Temperate East","Northwest","South-west")))
+levels(all_perc_weekday$Weekday) <- c("M","T","W","R","F","Sa","Su")
 
 
 
 
 
+ggplot(data = all_perc_weekday |> filter(ves_yn == "Y"),
+       aes(x = Weekday,
+           y = Perc_per_hour,
+           fill = network,
+           color = network))+
+  geom_boxplot(
+    position = position_dodge2(preserve = "single"),
+    alpha = 0.5,
+    width = 0.5,
+    outliers = FALSE)+
+  geom_point(alpha = 0.5, 
+             position = position_jitterdodge(jitter.width = 0.1)) +
+  scale_fill_viridis_d(end = 0.75,
+                       direction = -1
+                       )+
+  scale_color_viridis_d(end = 0.75,
+                        direction = -1,
+                        guide = "none")+
+  # facet_grid(rows = vars(network), 
+  #            drop = TRUE) +
+  labs(x = "Weekday",
+       y = "Proportion hours per weekday",
+       fill = "Network") +
+  theme(
+    strip.text.y = element_text(face = "bold"),
+    axis.text.y = element_text(face = "bold"),
+    axis.text.x = element_text(face = "bold")
+  )
+
+
+ggsave(paste0("Figures/", "Weekday_prop_hrs_nofacets.png"), width=10, height=6,
+       units="in", dpi=300)
 
 
 
 
+## Try individual npz's for a single network
+## need to torubleshoot how these props are counted... might not be doing what I think it is
+# looks like one value per deployment per weekday, but ideally would be boxplots of daily
+# proportions summarized by weekday? i.e., should have a separate point for each time a weekday occurred
+# e.g., if deployment was 4 weeks, Thursday might be {0.15, 0.11, 0.23, 0.20} vs. Monday = {0.01, 0.02, 0.01, 0.03}
+# might need to do ves_yn by date, then summarize/group by weekday or something
+
+ggplot(data = all_perc_weekday |> filter(ves_yn == "Y",
+                                         network == "South-west"),
+       aes(x = Weekday,
+           y = Perc_per_hour,
+           fill = npz_id,
+           color = npz_id))+
+  geom_boxplot(
+    position = position_dodge2(preserve = "single"),
+    alpha = 0.5,
+    width = 0.5,
+    outliers = FALSE)+
+  geom_point(alpha = 0.5, 
+             position = position_jitterdodge(jitter.width = 0.1)) +
+  scale_fill_viridis_d(end = 0.75,
+                       direction = -1
+  )+
+  scale_color_viridis_d(end = 0.75,
+                        direction = -1,
+                        guide = "none")+
+  # facet_grid(rows = vars(network), 
+  #            drop = TRUE) +
+  labs(x = "Weekday",
+       y = "Proportion hours per weekday",
+       fill = "NPZ") +
+  theme(
+    strip.text.y = element_text(face = "bold"),
+    axis.text.y = element_text(face = "bold"),
+    axis.text.x = element_text(face = "bold")
+  )
 
 
 
