@@ -302,7 +302,7 @@ ggsave(paste0("Figures/", "Prop_hrs_boxplot_by_dep.png"), width=10, height=6,
 # Vessels inside parks -- N hours with vessel inside park out of N deployment hours
 ins_ves_prop_hrs <- all_sites_hp |>
   # group by y/n column to collapse into hours
-  group_by(network, npz_id, Site_ID, Dep, Week, ins_ves_yn) |>
+  group_by(network, npz_id, Site_ID, Dep, Date_week, ins_ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
   mutate(freq = n_hours/sum(n_hours)) |>
@@ -346,20 +346,21 @@ ins_ves_prop_hrs <- all_sites_hp |>
 #
 
 
-# Try to plot!
-ggplot(data = ins_ves_prop_hrs |> filter(ins_ves_yn == "Y"),
+# Plot inside (sm-med) vessels by deployment
+ggplot(data = ins_ves_prop_hrs |> 
+         filter(ins_ves_yn == "Y"),
        aes(x = npz_id,
            y = Perc_per_hour,
            fill = network,
            color = network))+
-  geom_boxplot(
-    # aes(group = Dep),
-    position = position_dodge2(preserve = "single"),
-    alpha = 0.5,
-    width = 0.5,
-    outliers = FALSE)+
-  geom_point(alpha = 0.5, 
-             position = position_jitter(width = 0.1)) +
+  geom_boxplot(aes(group = Dep),
+               position = position_dodge2(preserve = "single"),
+               alpha = 0.5,
+               width = 0.5)+
+  # geom_point(aes(group = Dep),
+  #            alpha = 0.5, 
+  #            position = position_jitterdodge(dodge.width = 0.25,
+  #                                            jitter.width = 0)) +
   scale_fill_viridis_d(end = 0.75,
                        direction = -1,
                        guide = "none")+
@@ -371,23 +372,20 @@ ggplot(data = ins_ves_prop_hrs |> filter(ins_ves_yn == "Y"),
              space = "free", 
              drop = TRUE) +
   labs(x = "NPZ",
-       y = "Proportion hours per week \nwith vessels inside NPZ") +
+       y = "Proportion hours per week with \nvessels inside park") +
   theme(
     strip.text.x = element_text(face = "bold"),
     axis.text.x = element_text(face = "bold")
   )
 
-ggsave(paste0("Figures/", "Weekly_prop_hrs_npz_ntwk_ins.png"), width=10, height=6,
+ggsave(paste0("Figures/", "Prop_hrs_ins_boxplot_by_dep.png"), width=10, height=6,
        units="in", dpi=300)
-
-
-
 
 
 # Vessels inside parks -- N hours with vessel inside park out of N deployment hours
 ins_sm_ves_prop_hrs <- all_sites_hp |>
   # group by y/n column to collapse into hours
-  group_by(network, npz_id, Site_ID, Dep, Week, ins_ves_small_yn) |>
+  group_by(network, npz_id, Site_ID, Dep, Date_week, ins_ves_small_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
   mutate(freq = n_hours/sum(n_hours)) |>
@@ -437,14 +435,10 @@ ggplot(data = ins_sm_ves_prop_hrs |> filter(ins_ves_small_yn == "Y"),
            y = Perc_per_hour,
            fill = network,
            color = network))+
-  geom_boxplot(
-    # aes(group = Dep),
-    position = position_dodge2(preserve = "single"),
-    alpha = 0.5,
-    width = 0.5,
-    outliers = FALSE)+
-  geom_point(alpha = 0.5, 
-             position = position_jitter(width = 0.1)) +
+  geom_boxplot(aes(group = Dep),
+               position = position_dodge2(preserve = "single"),
+               alpha = 0.5,
+               width = 0.5)+
   scale_fill_viridis_d(end = 0.75,
                        direction = -1,
                        guide = "none")+
@@ -462,7 +456,7 @@ ggplot(data = ins_sm_ves_prop_hrs |> filter(ins_ves_small_yn == "Y"),
     axis.text.x = element_text(face = "bold")
   )
 
-ggsave(paste0("Figures/", "Weekly_prop_hrs_npz_ntwk_ins_small.png"), width=10, height=6,
+ggsave(paste0("Figures/", "Prop_hrs_ins_small_boxplot_by_dep.png"), width=10, height=6,
        units="in", dpi=300)
 
 
@@ -503,18 +497,22 @@ weekday_summary <- all_ves_by_weekday |>
          ),
          network = factor(network, levels = c("Temperate East","Northwest","South-west")))
 
-# Weekday proportional presence
+#### Weekday proportional presence ####
 # of all available hours represented by X weekday, Y% had vessels present
+
+# start with full hp dataset
 all_perc_weekday <- all_sites_hp |>
-  # group by date 
-  group_by(network, npz_id, Site_ID, Dep, Weekday, ves_yn) |>
+  # group by date to get % presence per day 
+  group_by(network, npz_id, Site_ID, Dep, Date_noyr, Begin_Date_loc, Weekday, ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
   mutate(freq = n_hours/sum(n_hours)) |>
+  # ungroup to fill in any missing values for columns
   ungroup() |>
   complete(Dep, Weekday, ves_yn,
            fill = list(ves_yn = "Y", freq = 0)) |>
-  group_by(network, npz_id, Site_ID, Dep, Weekday, ves_yn) |>
+  # regroup
+  group_by(network, npz_id, Site_ID, Dep, Begin_Date_loc, Weekday, ves_yn) |>
   # reshape for easier plotting
   pivot_longer(cols = c("freq"),
                values_to = "Perc_per_hour") |>
@@ -528,9 +526,11 @@ levels(all_perc_weekday$Weekday) <- c("M","T","W","R","F","Sa","Su")
 
 
 
+#### LEFT OFF HERE ####
+# need to figure out how to plot by dep like I did for overall proportions
 
-
-ggplot(data = all_perc_weekday |> filter(ves_yn == "Y"),
+ggplot(data = all_perc_weekday |> 
+         filter(ves_yn == "Y"),
        aes(x = Weekday,
            y = Perc_per_hour,
            fill = network,
@@ -538,17 +538,16 @@ ggplot(data = all_perc_weekday |> filter(ves_yn == "Y"),
   geom_boxplot(
     position = position_dodge2(preserve = "single"),
     alpha = 0.5,
-    width = 0.5,
-    outliers = FALSE)+
-  geom_point(alpha = 0.5, 
-             position = position_jitterdodge(jitter.width = 0.1)) +
+    width = 0.5)+
+  # geom_point(alpha = 0.5, 
+  #            position = position_jitterdodge(jitter.width = 0.1)) +
   scale_fill_viridis_d(end = 0.75,
                        direction = -1
                        )+
   scale_color_viridis_d(end = 0.75,
                         direction = -1,
                         guide = "none")+
-  # facet_grid(rows = vars(network), 
+  # facet_grid(rows = vars(network),
   #            drop = TRUE) +
   labs(x = "Weekday",
        y = "Proportion hours per weekday",
