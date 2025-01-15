@@ -56,7 +56,10 @@ all_sites_hp <- all_sites_hp |>
     Month = month(Begin_Date_loc),
     Week = isoweek(Begin_Date_loc),
     Day_month = mday(Begin_Date_loc),
-    Date_noyr = as_date(paste0(Month, "-", Day_month), format = "%m-%d"),
+    # re-create dates as all in the same year for plotting on single graph
+    Date_noyr = as_date(paste0("2000", "-", Month, "-", Day_month), format = "%Y-%m-%d"),
+    # get start date for each week
+    Date_week = as_date(paste(Week,"1",sep = "-"), format = "%U-%u"),
     
     # add network for grouping/faceting later
     network = case_when(Site_ID == "CG" | Site_ID == "EP" | Site_ID == "WP" ~ "Temperate East",
@@ -157,7 +160,7 @@ ggplot(data = all_ves_by_week,
 
 #### By Date ####
 all_ves_by_date <- all_sites_hp |>
-  group_by(network, npz_id, Site_ID, Dep, Week, Date_noyr) |>
+  group_by(network, npz_id, Site_ID, Dep, Week, Date_week, Date_noyr) |>
   summarise(n_days = n_distinct(Begin_Date_loc),
             Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
             Total_inside_ves_dep = sum(total_inside, na.rm = TRUE),
@@ -169,6 +172,8 @@ all_ves_by_date <- all_sites_hp |>
     Date_noyr = as.Date(Date_noyr, format = "%Y-%m-%d")
   ) 
 
+
+# Daily totals over nominal year
 ggplot(data = all_ves_by_date,
        aes(x = Date_noyr,
            y = Total_ves_dep,
@@ -181,7 +186,8 @@ ggplot(data = all_ves_by_date,
   scale_fill_viridis_d(end = 0.75,
                        direction = -1,
                        guide = "none")+
-  scale_x_date(date_labels = '%b-%d') +
+  scale_x_date(date_labels = '%b', 
+               date_breaks = "month") +
   labs(x = "Date",
        y = "N vessels per day") +
   theme(
@@ -199,12 +205,11 @@ ggsave(paste0("Figures/", "Daily_counts_npz_ntwk.png"), width=10, height=6,
 
 # Try weekly boxplots instead of individual dates #
 ggplot(data = all_ves_by_date,
-       aes(x = Date_noyr,
+       aes(x = Date_week,
            y = Total_ves_dep,
            fill = network))+
-  geom_boxplot(aes(group = Week,
+  geom_boxplot(aes(group = Date_week,
                    color = network),
-               position = position_dodge2(preserve = "single"),
                alpha = 0.5,
                width = 1,
                show.legend = FALSE)+
@@ -212,9 +217,10 @@ ggplot(data = all_ves_by_date,
                        direction = -1,
                        guide = "none")+
   scale_color_viridis_d(end = 0.75,
-                       direction = -1,
-                       guide = "none")+
-  scale_x_date(date_labels = '%b-%d') +
+                        direction = -1,
+                        guide = "none")+
+  scale_x_date(date_labels = '%b', 
+               date_breaks = "1 month") +
   labs(x = "Date",
        y = "N vessels per day") +
   theme(
@@ -241,7 +247,7 @@ ggsave(paste0("Figures/", "Weekly_boxplots_npz_ntwk.png"), width=10, height=6,
 # Proportion of hours with vessel present for total deployment
 all_ves_prop_hrs <- all_sites_hp |>
   # group by y/n column
-  group_by(network, npz_id, Site_ID, Dep, Week, ves_yn) |>
+  group_by(network, npz_id, Site_ID, Dep, Date_week, ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
   mutate(freq = n_hours/sum(n_hours)) |>
@@ -255,19 +261,21 @@ all_ves_prop_hrs <- all_sites_hp |>
   mutate(network = factor(network, levels = c("Temperate East","Northwest","South-west")))
 
 # Try to plot!
-ggplot(data = all_ves_prop_hrs |> filter(ves_yn == "Y"),
+ggplot(data = all_ves_prop_hrs |> 
+         # only want to plot presence
+         filter(ves_yn == "Y"),
        aes(x = npz_id,
            y = Perc_per_hour,
            fill = network,
            color = network))+
-  geom_boxplot(
-    # aes(group = Dep),
+  geom_boxplot(aes(group = Dep),
     position = position_dodge2(preserve = "single"),
     alpha = 0.5,
-    width = 0.5,
-    outliers = FALSE)+
-  geom_point(alpha = 0.5, 
-             position = position_jitter(width = 0.1)) +
+    width = 0.5)+
+  # geom_point(aes(group = Dep),
+  #            alpha = 0.5, 
+  #            position = position_jitterdodge(dodge.width = 0.25,
+  #                                            jitter.width = 0)) +
   scale_fill_viridis_d(end = 0.75,
                        direction = -1,
                        guide = "none")+
@@ -285,7 +293,7 @@ ggplot(data = all_ves_prop_hrs |> filter(ves_yn == "Y"),
     axis.text.x = element_text(face = "bold")
   )
 
-ggsave(paste0("Figures/", "Weekly_prop_hrs_npz_ntwk.png"), width=10, height=6,
+ggsave(paste0("Figures/", "Prop_hrs_boxplot_by_dep.png"), width=10, height=6,
        units="in", dpi=300)
 
 
