@@ -26,14 +26,14 @@ theme_set(theme_bw(
 ))
 
 # source helper file
-source("scripts/AMP_summary_ves_funs.R")
+source("code/AMP_summary_ves_funs.R")
 
 
 #### Load compiled hourly presence table ####
 # This is generated using Reformat_data_for_HP script
 
-all_sites_hp <- read_csv("data_inputs/All_sites_tables/hourly_pres_allsites_local.csv")
-all_sites_inout <- read_csv("data_inputs/All_sites_tables/total_ves_ins_out_by_site.csv")
+all_sites_hp <- read_csv("data/All_sites_tables/hourly_pres_allsites_local.csv")
+all_sites_inout <- read_csv("data/All_sites_tables/total_ves_ins_out_by_site.csv")
 
   
 # Reshape data for plotting -----------------------------------------------
@@ -199,7 +199,7 @@ ggplot(data = all_ves_by_date,
              # space = "free", 
              drop = TRUE)
 
-ggsave(paste0("Figures/", "Daily_counts_npz_ntwk.png"), width=10, height=6,
+ggsave(paste0("figs/", "Daily_counts_npz_ntwk.png"), width=10, height=6,
        units="in", dpi=300)
 
 
@@ -232,7 +232,7 @@ ggplot(data = all_ves_by_date,
              # space = "free", 
              drop = TRUE)
 
-ggsave(paste0("Figures/", "Weekly_boxplots_npz_ntwk.png"), width=10, height=6,
+ggsave(paste0("figs/", "Weekly_boxplots_npz_ntwk.png"), width=10, height=6,
        units="in", dpi=300)
 
 
@@ -293,7 +293,7 @@ ggplot(data = all_ves_prop_hrs |>
     axis.text.x = element_text(face = "bold")
   )
 
-ggsave(paste0("Figures/", "Prop_hrs_boxplot_by_dep.png"), width=10, height=6,
+ggsave(paste0("figs/", "Prop_hrs_boxplot_by_dep.png"), width=10, height=6,
        units="in", dpi=300)
 
 
@@ -378,7 +378,7 @@ ggplot(data = ins_ves_prop_hrs |>
     axis.text.x = element_text(face = "bold")
   )
 
-ggsave(paste0("Figures/", "Prop_hrs_ins_boxplot_by_dep.png"), width=10, height=6,
+ggsave(paste0("figs/", "Prop_hrs_ins_boxplot_by_dep.png"), width=10, height=6,
        units="in", dpi=300)
 
 
@@ -456,7 +456,7 @@ ggplot(data = ins_sm_ves_prop_hrs |> filter(ins_ves_small_yn == "Y"),
     axis.text.x = element_text(face = "bold")
   )
 
-ggsave(paste0("Figures/", "Prop_hrs_ins_small_boxplot_by_dep.png"), width=10, height=6,
+ggsave(paste0("figs/", "Prop_hrs_ins_small_boxplot_by_dep.png"), width=10, height=6,
        units="in", dpi=300)
 
 
@@ -559,7 +559,7 @@ ggplot(data = all_perc_weekday |>
   )
 
 
-ggsave(paste0("Figures/", "Weekday_prop_hrs_nofacets.png"), width=10, height=6,
+ggsave(paste0("figs/", "Weekday_prop_hrs_nofacets.png"), width=10, height=6,
        units="in", dpi=300)
 
 
@@ -744,7 +744,7 @@ ggplot(data = weekday_summary,
   theme_bw()
 
 # # Save figure
-# ggsave("Figures/weekday_by_site_qt25-75.jpg", device = "jpeg",
+# ggsave("figs/weekday_by_site_qt25-75.jpg", device = "jpeg",
 #        width=10, height=8, units="in", dpi=300)
 
 
@@ -757,7 +757,7 @@ ggplot(data = all_ves_by_weekday,
   theme_bw()
 
 # # Save figure
-ggsave("Figures/weekday_by_network_boxplot.jpg", device = "jpeg",
+ggsave("figs/weekday_by_network_boxplot.jpg", device = "jpeg",
        width=10, height=8, units="in", dpi=300)
 
 
@@ -830,7 +830,7 @@ ggplot(data = all_ves_by_weekday |> filter(network == "Temperate East"),
   facet_grid(rows = vars(network),
              scales = "free_y") +
   theme_bw()
-ggsave("Figures/weekday_by_network_raincloud.jpg", device = "jpeg",
+ggsave("figs/weekday_by_network_raincloud.jpg", device = "jpeg",
        width=10, height=8, units="in", dpi=300)
 
 
@@ -853,7 +853,7 @@ ggplot(data = all_ves_by_weekday,
   theme_bw()
 
 # Save figure
-ggsave("Figures/inside_weekday_by_site_boxplot.jpg", device = "jpeg",
+ggsave("figs/inside_weekday_by_site_boxplot.jpg", device = "jpeg",
        width=10, height=8, units="in", dpi=300)
 
 
@@ -868,7 +868,7 @@ ggplot(data = all_ves_by_weekday,
   theme_bw()
 
 # Save figure
-ggsave("Figures/inside_weekday_by_network_boxplot.jpg", device = "jpeg",
+ggsave("figs/inside_weekday_by_network_boxplot.jpg", device = "jpeg",
        width=10, height=8, units="in", dpi=300)
 
 
@@ -907,7 +907,7 @@ ggplot(data = all_diel_perc |>
              scales = "free_y")
 
 # # Save figure
-# ggsave("Figures/Diel_by_site_fixed_y.jpg", device = "jpeg",
+# ggsave("figs/Diel_by_site_fixed_y.jpg", device = "jpeg",
 #        width=10, height=8, units="in", dpi=300)
 
 
@@ -937,7 +937,7 @@ ggplot(all_sites_hp,
 
 
 # Save figure
-ggsave("Figures/Diel_allsites_heatmap.jpg", device = "jpeg",
+ggsave("figs/Diel_allsites_heatmap.jpg", device = "jpeg",
        width=10, height=8, units="in", dpi=300)
 
 
@@ -959,7 +959,7 @@ ggplot(data = all_sites_hp,
 
 
 # Save figure
-ggsave("Figures/Diel_allsites_heatmap.jpg", device = "jpeg",
+ggsave("figs/Diel_allsites_heatmap.jpg", device = "jpeg",
        width=10, height=8, units="in", dpi=300)
 
 
@@ -1002,7 +1002,7 @@ ggplot(data = daily_ves,
         strip.text.y = element_text(colour = "white", face = "bold"), 
         plot.title = element_text(hjust = 0.5))
 
-ggsave("Figures/Daily_meanSD_by_site.jpg", device = "jpeg",
+ggsave("figs/Daily_meanSD_by_site.jpg", device = "jpeg",
         width=10, height=8, units="in", dpi=300)
   
 
@@ -1104,7 +1104,7 @@ ggplot(data = ins_ves_by_site,
         axis.ticks.x = element_blank())
 
 # Save figure
-ggsave("Figures/Ins-out_by_site_9NPZ.jpg", device = "jpeg",
+ggsave("figs/Ins-out_by_site_9NPZ.jpg", device = "jpeg",
        width=14, height=8, units="in", dpi=300)
 
 
@@ -1121,7 +1121,7 @@ ggplot(data = all_ves_by_site,
 
 
 # Save figure
-ggsave("Figures/Ves_per_day_by_site_9NPZ.jpg", device = "jpeg",
+ggsave("figs/Ves_per_day_by_site_9NPZ.jpg", device = "jpeg",
        width=10, height=8, units="in", dpi=300)
 
 
@@ -1143,7 +1143,7 @@ ggplot(data = all_sites_diel,
   theme(text = element_text(size = 18))
 
 # Save figure
-ggsave("Figures/Diel_total_by_site_9NPZ.jpg", device = "jpeg",
+ggsave("figs/Diel_total_by_site_9NPZ.jpg", device = "jpeg",
        width=9, height=9, units="in", dpi=300)
 
 
@@ -1167,7 +1167,7 @@ ggplot(data = all_sites_week,
 
 
 # Save figure
-ggsave("Figures/Weekday_total_by_site_9NPZ.jpg", device = "jpeg",
+ggsave("figs/Weekday_total_by_site_9NPZ.jpg", device = "jpeg",
        width=9, height=9, units="in", dpi=300)
 
 
@@ -1196,7 +1196,7 @@ ggplot(data = all_ves_by_site,
 
 
 # Save figure
-ggsave("Figures/Inside_ves_per_day_by_site.jpg", device = "jpeg",
+ggsave("figs/Inside_ves_per_day_by_site.jpg", device = "jpeg",
        width=10, height=8, units="in", dpi=300)
 
 #### INSIDE - DIEL ####
@@ -1224,7 +1224,7 @@ ggplot(data = inside_diel,
   theme(text = element_text(size = 18))
 
 # Save figure
-ggsave("Figures/Diel_inside_by_site.jpg", device = "jpeg",
+ggsave("figs/Diel_inside_by_site.jpg", device = "jpeg",
        width=9, height=9, units="in", dpi=300)
 
 
@@ -1259,11 +1259,11 @@ ggplot(data = inside_week,
   theme(text = element_text(size = 18))
 
 # Save figure
-ggsave("Figures/Weekday_inside_by_site.jpg", device = "jpeg",
+ggsave("figs/Weekday_inside_by_site.jpg", device = "jpeg",
        width=9, height=9, units="in", dpi=300)
 
 
 #### SAVE SUMMARY TABLES ####
-write_csv(all_ves_by_site, "data_outputs/All_ves_by_site.csv")
-write_csv(weekday_summary, "data_outputs/All_ves_by_weekday.csv")
-write_csv(all_ves_prop_hrs, "data_outputs/All_ves_by_hour.csv")
+write_csv(all_ves_by_site, "output/All_ves_by_site.csv")
+write_csv(weekday_summary, "output/All_ves_by_weekday.csv")
+write_csv(all_ves_prop_hrs, "output/All_ves_by_hour.csv")

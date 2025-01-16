@@ -15,7 +15,7 @@ tidyverse_short<-c("broom","cli","crayon","dbplyr","dplyr","dtplyr","forcats","g
 lapply(tidyverse_short, require, character.only = TRUE) 
 
 # source helper file with various data wrangling functions
-source("scripts/AMP_summary_ves_funs.R")
+source("code/AMP_summary_ves_funs.R")
 
 #### Load in data ####
 
@@ -105,7 +105,7 @@ hp_data <- hp_allcols |>
   bind_rows()
 
 # Create CSV to make data input easier. Maybe eventually add some logic in script to bypass generating this?
-write_csv(hp_data, "data_outputs/total_ves_hp_by_site.csv")
+write_csv(hp_data, "output/total_ves_hp_by_site.csv")
 
 
 
@@ -145,7 +145,7 @@ selns_data <- selns_og |>
   bind_rows()
 
 # write csv for easier input later
-write.csv(selns_data, "data_outputs/total_ves_selns_data_by_site.csv")
+write.csv(selns_data, "output/total_ves_selns_data_by_site.csv")
 
 
 # Bind rows to get df for inside-outside tables
@@ -159,7 +159,7 @@ ins_out_data <- ins_out_og |>
   bind_rows()
 
 # write csv for easier input later
-write.csv(ins_out_data, "data_outputs/total_ves_ins_out_by_site.csv")
+write.csv(ins_out_data, "output/total_ves_ins_out_by_site.csv")
 
 # Small vessels
 ins_vessels_small <- ins_out_data |>
@@ -208,5 +208,5 @@ total_ins_hp <- hp_data |>
 
 
 # save CSV with all sites' hourly presence (total & inside NPZ)
-write.csv(total_ins_hp, "data_outputs/hourly_pres_allsites_local.csv")
+write.csv(total_ins_hp, "output/hourly_pres_allsites_local.csv")
 
