@@ -542,10 +542,7 @@ all_perc_weekday <- all_sites_hp |>
 levels(all_perc_weekday$Weekday) <- c("M","T","W","R","F","Sa","Su")
 
 
-
-#### LEFT OFF HERE ####
-# need to figure out how to plot by dep like I did for overall proportions
-
+# Plot weekday presence
 ggplot(data = all_perc_weekday |> 
          filter(ves_yn == "Y",
                 !is.na(npz_id)),
