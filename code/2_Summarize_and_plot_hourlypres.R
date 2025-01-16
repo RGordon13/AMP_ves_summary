@@ -88,6 +88,26 @@ all_sites_hp <- all_sites_hp |>
     )
   )
 
+#### Create lists for data gaps ####
+
+# load in deployment info CSV
+deploy_info <- read_csv("data/AMP_deployment_info.csv")
+
+date_gaps <- deploy_info |>
+  mutate(Dep = gsub(pattern = "PARKSAUSTRALIA_",
+                    replacement = "",
+                    x = PROJECT_NAME)) |>
+  left_join(all_sites_hp, by = "Dep", multiple = "first") |>
+  select(c(Dep, `Start date`, `End date`, network, npz_id, Site_ID)) |>
+  mutate(gap_start = (`End date`) + 1, 
+         gap_end = lead(`Start date`) - 1) |>
+  filter(gap_start < gap_end)
+
+
+  pivot_longer(cols = c(gap_start, gap_end),
+               values_to = "start_end_dates") |>
+  group_by(network, npz_id, Site_ID, Dep) |>
+  mutate(time_diff = start_end_dates- lag(start_end_dates))
 
 
 
