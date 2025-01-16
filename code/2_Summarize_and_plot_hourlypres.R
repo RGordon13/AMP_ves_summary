@@ -90,24 +90,21 @@ all_sites_hp <- all_sites_hp |>
 
 #### Create lists for data gaps ####
 
+## Still need to troubleshoot this!!!
+
 # load in deployment info CSV
-deploy_info <- read_csv("data/AMP_deployment_info.csv")
 
-date_gaps <- deploy_info |>
-  mutate(Dep = gsub(pattern = "PARKSAUSTRALIA_",
-                    replacement = "",
-                    x = PROJECT_NAME)) |>
-  left_join(all_sites_hp, by = "Dep", multiple = "first") |>
-  select(c(Dep, `Start date`, `End date`, network, npz_id, Site_ID)) |>
-  mutate(gap_start = (`End date`) + 1, 
-         gap_end = lead(`Start date`) - 1) |>
-  filter(gap_start < gap_end)
-
-
-  pivot_longer(cols = c(gap_start, gap_end),
-               values_to = "start_end_dates") |>
-  group_by(network, npz_id, Site_ID, Dep) |>
-  mutate(time_diff = start_end_dates- lag(start_end_dates))
+# deploy_info <- read_csv("data/AMP_deployment_info.csv")
+# 
+# date_gaps <- deploy_info |>
+#   mutate(Dep = gsub(pattern = "PARKSAUSTRALIA_",
+#                     replacement = "",
+#                     x = PROJECT_NAME)) |>
+#   left_join(all_sites_hp, by = "Dep", multiple = "first") |>
+#   select(c(Dep, all_dep_start, pre_site_gap_end, 
+#            post_site_gap_start, all_dep_end,
+#            dep_gap_start, dep_gap_end, 
+#            network, npz_id, Site_ID))
 
 
 
@@ -550,15 +547,17 @@ levels(all_perc_weekday$Weekday) <- c("M","T","W","R","F","Sa","Su")
 # need to figure out how to plot by dep like I did for overall proportions
 
 ggplot(data = all_perc_weekday |> 
-         filter(ves_yn == "Y"),
+         filter(ves_yn == "Y",
+                !is.na(npz_id)),
        aes(x = Weekday,
            y = Perc_per_hour,
-           fill = network,
-           color = network))+
+           fill = Dep,
+           color = Dep))+
   geom_boxplot(
     position = position_dodge2(preserve = "single"),
     alpha = 0.5,
-    width = 0.5)+
+    width = 0.5,
+    show.legend = FALSE)+
   # geom_point(alpha = 0.5, 
   #            position = position_jitterdodge(jitter.width = 0.1)) +
   scale_fill_viridis_d(end = 0.75,
@@ -567,11 +566,10 @@ ggplot(data = all_perc_weekday |>
   scale_color_viridis_d(end = 0.75,
                         direction = -1,
                         guide = "none")+
-  # facet_grid(rows = vars(network),
-  #            drop = TRUE) +
+  facet_wrap(network ~ npz_id,
+             drop = TRUE) +
   labs(x = "Weekday",
-       y = "Proportion hours per weekday",
-       fill = "Network") +
+       y = "Proportion hours per weekday") +
   theme(
     strip.text.y = element_text(face = "bold"),
     axis.text.y = element_text(face = "bold"),
@@ -579,7 +577,7 @@ ggplot(data = all_perc_weekday |>
   )
 
 
-ggsave(paste0("figs/", "Weekday_prop_hrs_nofacets.png"), width=10, height=6,
+ggsave(paste0("figs/", "Weekday_prop_hrs_dep_ntwk.png"), width=10, height=6,
        units="in", dpi=300)
 
 
@@ -592,27 +590,26 @@ ggsave(paste0("figs/", "Weekday_prop_hrs_nofacets.png"), width=10, height=6,
 # e.g., if deployment was 4 weeks, Thursday might be {0.15, 0.11, 0.23, 0.20} vs. Monday = {0.01, 0.02, 0.01, 0.03}
 # might need to do ves_yn by date, then summarize/group by weekday or something
 
-ggplot(data = all_perc_weekday |> filter(ves_yn == "Y",
-                                         network == "South-west"),
+ggplot(data = all_perc_weekday |> 
+         filter(ves_yn == "Y",
+                !is.na(npz_id),
+                network == "Temperate East"),
        aes(x = Weekday,
            y = Perc_per_hour,
-           fill = npz_id,
-           color = npz_id))+
+           fill = Dep,
+           color = Dep))+
   geom_boxplot(
     position = position_dodge2(preserve = "single"),
-    alpha = 0.5,
-    width = 0.5,
-    outliers = FALSE)+
-  geom_point(alpha = 0.5, 
-             position = position_jitterdodge(jitter.width = 0.1)) +
+    alpha = 0.75,
+    width = 0.5)+
   scale_fill_viridis_d(end = 0.75,
                        direction = -1
   )+
   scale_color_viridis_d(end = 0.75,
                         direction = -1,
                         guide = "none")+
-  # facet_grid(rows = vars(network), 
-  #            drop = TRUE) +
+  facet_grid(rows = vars(npz_id),
+             drop = TRUE) +
   labs(x = "Weekday",
        y = "Proportion hours per weekday",
        fill = "NPZ") +
@@ -622,7 +619,8 @@ ggplot(data = all_perc_weekday |> filter(ves_yn == "Y",
     axis.text.x = element_text(face = "bold")
   )
 
-
+ggsave(paste0("figs/", "Weekday_prop_hrs_npz_southwest.png"), width=6, height=10,
+       units="in", dpi=300)
 
 
 
