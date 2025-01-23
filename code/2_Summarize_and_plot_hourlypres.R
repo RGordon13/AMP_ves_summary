@@ -301,7 +301,17 @@ all_ves_prop_hrs_day <- all_sites_hp |>
   # reshape for easier plotting
   pivot_longer(cols = c("freq"),
                values_to = "Perc_per_hour") |>
-  mutate(network = factor(network, levels = c("Temperate East","Northwest","South-west")))
+  mutate(network = factor(network, levels = c("Temperate East","Northwest","South-west"))) |>
+  mutate(Weekday = factor(Weekday, levels=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")),
+         network = case_when(Site_ID == "CG" | Site_ID == "EP" | Site_ID == "WP" ~ "Temperate East",
+                             Site_ID == "DNE" | Site_ID == "DSW" | Site_ID == "NGN"| Site_ID == "NGS" ~ "Northwest",
+                             TRUE ~ "South-west"
+         ),
+         network = fct(network),
+         network = fct_relevel(network, c("Temperate East","Northwest")),
+         npz_id = fct(npz_id),
+         npz_id = fct_relevel(npz_id, c("CGMP","SIMP","DMP","NMP")))
+levels(all_ves_prop_hrs_day$Weekday) <- c("M","T","W","R","F","Sa","Su")
 
 write_csv(all_ves_prop_hrs_day, "output/All_ves_prophr_day.csv")
 
@@ -407,8 +417,6 @@ all_ves_prop_hrs_week <- all_sites_hp |>
 write_csv(all_ves_prop_hrs_week, "output/All_ves_prophr_week.csv")
 
 
-
-
 # Plot proportion of hours present per week
 ggplot(data = all_ves_prop_hrs_week |> 
          # only want to plot presence
@@ -444,6 +452,65 @@ ggplot(data = all_ves_prop_hrs_week |>
 
 ggsave(paste0("figs/", "Prop_hrs_boxplot_by_dep_week.png"), width=10, height=6,
        units="in", dpi=300)
+
+
+
+
+# Prop hours present per day, by weekday
+
+weekday_summary <- all_ves_prop_hrs_day |>
+  group_by(Dep, Weekday) |>
+  summarize(ndays = n(),
+            prop_median = median(Perc_per_hour))
+
+
+
+# Plot proportion of hours present per day by weekday
+ggplot(data = all_ves_prop_hrs_day |> 
+         # only want to plot presence
+         filter(ves_yn == "Y"),
+       aes(x = Weekday,
+           y = Perc_per_hour))+
+  geom_boxplot(aes(fill = network,
+                   color = network),
+               position = position_dodge2(preserve = "single"),
+               alpha = 0.5,
+               width = 0.25)+
+  scale_fill_viridis_d(end = 0.75,
+                       direction = -1,
+                       guide = "none")+
+  scale_color_viridis_d(end = 0.75,
+                        direction = -1,
+                        guide = "none")+
+  facet_grid(network~npz_id,
+             # scales = "free_x", 
+             # space = "free", 
+             drop = TRUE) +
+  labs(x = "Weekday",
+       y = "Proportion hours per day with vessels") +
+  theme(
+    strip.text.y = element_text(face = "bold"),
+    axis.text.x = element_text(face = "bold")
+  )
+
+# ggsave(paste0("figs/", "Weekday_prop_hrs_dep_ntwk.png"), width=10, height=6,
+#        units="in", dpi=300)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
