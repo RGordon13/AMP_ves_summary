@@ -178,7 +178,7 @@ ggplot(data = all_ves_by_week,
 
 
 
-#### By Date ####
+#### Total Vessels by Date ####
 
 # With year
 
@@ -195,8 +195,8 @@ all_ves_by_date <- all_sites_hp |>
     # Date_noyr = as.Date(Date_noyr, format = "%Y-%m-%d")
   ) 
 
-write_csv(all_ves_by_date_noyr, 
-          file = "output/All_ves_by_datenoyr.csv")
+write_csv(all_ves_by_date, 
+          file = "output/All_ves_by_date.csv")
 
 
 
@@ -243,7 +243,7 @@ ggplot(data = all_ves_by_date,
   facet_grid(rows = vars(network),
              drop = TRUE)
 
-ggsave(paste0("figs/", "Daily_counts_npz_ntwk.png"), width=10, height=6,
+ggsave(paste0("figs/", "Daily_counts_allnpz_1yr.png"), width=10, height=6,
        units="in", dpi=300)
 
 
@@ -282,14 +282,14 @@ ggsave(paste0("figs/", "Weekly_boxplots_npz_ntwk.png"), width=10, height=6,
 
 
 
-#### Proportion presence ####
+#### Total Vessels proportion presence ####
 
 
 # Proportion of hours with vessel present per day for total deployment
 
 all_ves_prop_hrs_day <- all_sites_hp |>
   # group by y/n column
-  group_by(network, npz_id, Site_ID, Dep, Date_week, Begin_Date_loc, 
+  group_by(network, npz_id, Site_ID, Dep, Date_week, Weekday, Begin_Date_loc, 
            ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
@@ -303,8 +303,53 @@ all_ves_prop_hrs_day <- all_sites_hp |>
                values_to = "Perc_per_hour") |>
   mutate(network = factor(network, levels = c("Temperate East","Northwest","South-west")))
 
-
 write_csv(all_ves_prop_hrs_day, "output/All_ves_prophr_day.csv")
+
+
+# Weekly summary of daily proportions
+all_ves_week_summary <- all_ves_prop_hrs_day |>
+  group_by(network, npz_id, Site_ID, Dep, Date_week, ves_yn) |>
+  summarise(n_days = n(),
+            prop_median = median(Perc_per_hour),
+            prop_mean = mean(Perc_per_hour),
+            qt25 = quantile(Perc_per_hour, probs = c(0.25)),
+            qt75 = quantile(Perc_per_hour, probs = c(0.75))) |> 
+  filter(ves_yn == "Y")
+
+
+
+
+# Plot proportion of hours present per week
+ggplot(data = all_ves_week_summary |> 
+         # only want to plot presence
+         filter(ves_yn == "Y"),
+       aes(x = npz_id,
+           y = prop_median,
+           fill = network,
+           color = network))+
+  geom_boxplot(aes(group = Dep),
+               position = position_dodge2(preserve = "single"),
+               alpha = 0.5,
+               width = 0.5)+
+  scale_fill_viridis_d(end = 0.75,
+                       direction = -1,
+                       guide = "none")+
+  scale_color_viridis_d(end = 0.75,
+                        direction = -1,
+                        guide = "none")+
+  facet_grid(~network, 
+             scales = "free_x", 
+             space = "free", 
+             drop = TRUE) +
+  labs(x = "NPZ",
+       y = "Proportion hours per week with vessels") +
+  theme(
+    strip.text.x = element_text(face = "bold"),
+    axis.text.x = element_text(face = "bold")
+  )
+
+
+
 
 
 # Plot proportion of hours present per day
@@ -319,10 +364,6 @@ ggplot(data = all_ves_prop_hrs_day |>
     position = position_dodge2(preserve = "single"),
     alpha = 0.5,
     width = 0.5)+
-  # geom_point(aes(group = Dep),
-  #            alpha = 0.5, 
-  #            position = position_jitterdodge(dodge.width = 0.25,
-  #                                            jitter.width = 0)) +
   scale_fill_viridis_d(end = 0.75,
                        direction = -1,
                        guide = "none")+
@@ -345,7 +386,7 @@ ggsave(paste0("figs/", "Prop_hrs_boxplot_by_dep_day.png"), width=10, height=6,
 
 
 
-# Proportion of hours with vessel present per day for total deployment
+# Proportion of hours with vessel present per week for total deployment
 
 all_ves_prop_hrs_week <- all_sites_hp |>
   # group by y/n column
@@ -395,7 +436,7 @@ ggplot(data = all_ves_prop_hrs_week |>
              space = "free", 
              drop = TRUE) +
   labs(x = "NPZ",
-       y = "Proportion hours per day with vessels") +
+       y = "Proportion hours per week with vessels") +
   theme(
     strip.text.x = element_text(face = "bold"),
     axis.text.x = element_text(face = "bold")
