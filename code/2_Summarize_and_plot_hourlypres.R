@@ -120,6 +120,9 @@ all_ves_by_site <- all_sites_hp |>
             Total_inside_ves_dep = sum(total_inside, na.rm = TRUE),
             Total_inside_ves_small = sum(total_inside_small, na.rm = TRUE))
 
+write_csv(all_ves_by_site, 
+          file = "output/All_ves_by_dep.csv")
+
 ggplot(data = all_ves_by_site,
        aes(x = Dep,
            y = Total_ves_dep,
@@ -176,9 +179,31 @@ ggplot(data = all_ves_by_week,
 
 
 #### By Date ####
+
+# With year
+
 all_ves_by_date <- all_sites_hp |>
-  group_by(network, npz_id, Site_ID, Dep, Week, Date_week, Date_noyr) |>
+  group_by(network, npz_id, Site_ID, Dep, Week, Date_week, Begin_Date_loc) |>
   summarise(n_days = n_distinct(Begin_Date_loc),
+            Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
+            Total_inside_ves_dep = sum(total_inside, na.rm = TRUE),
+            Total_inside_ves_small = sum(total_inside_small, na.rm = TRUE)
+  ) |>
+  mutate(
+    network = fct(network),
+    network = fct_relevel(network, c("Temperate East","Northwest"))
+    # Date_noyr = as.Date(Date_noyr, format = "%Y-%m-%d")
+  ) 
+
+write_csv(all_ves_by_date_noyr, 
+          file = "output/All_ves_by_datenoyr.csv")
+
+
+
+# Without year 
+all_ves_by_date_noyr <- all_sites_hp |>
+  group_by(network, npz_id, Site_ID, Dep, Week, Date_week, Date_noyr) |>
+  summarise(n_days = n_distinct(Date_noyr),
             Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
             Total_inside_ves_dep = sum(total_inside, na.rm = TRUE),
             Total_inside_ves_small = sum(total_inside_small, na.rm = TRUE)
@@ -189,10 +214,13 @@ all_ves_by_date <- all_sites_hp |>
     Date_noyr = as.Date(Date_noyr, format = "%Y-%m-%d")
   ) 
 
+write_csv(all_ves_by_date_noyr, 
+          file = "output/All_ves_by_datenoyr.csv")
+
 
 # Daily totals over nominal year
 ggplot(data = all_ves_by_date,
-       aes(x = Date_noyr,
+       aes(x = Begin_Date_loc,
            y = Total_ves_dep,
            fill = network))+
   geom_col(aes(group = Dep),
@@ -203,24 +231,23 @@ ggplot(data = all_ves_by_date,
   scale_fill_viridis_d(end = 0.75,
                        direction = -1,
                        guide = "none")+
-  scale_x_date(date_labels = '%b', 
-               date_breaks = "month") +
+  scale_x_date(date_labels = '%b-%y', 
+               date_breaks = "3 months",
+               date_minor_breaks = "1 month") +
   labs(x = "Date",
        y = "N vessels per day") +
   theme(
     strip.text.y = element_text(face = "bold"),
     axis.text.x = element_text(face = "bold")
   ) +
-  facet_grid(rows = vars(network), 
-             # scales = "free_y",
-             # space = "free", 
+  facet_grid(rows = vars(network),
              drop = TRUE)
 
 ggsave(paste0("figs/", "Daily_counts_npz_ntwk.png"), width=10, height=6,
        units="in", dpi=300)
 
 
-# Try weekly boxplots instead of individual dates #
+# Try weekly boxplots for a nominal year instead of individual dates #
 ggplot(data = all_ves_by_date,
        aes(x = Date_week,
            y = Total_ves_dep,
@@ -257,14 +284,13 @@ ggsave(paste0("figs/", "Weekly_boxplots_npz_ntwk.png"), width=10, height=6,
 
 #### Proportion presence ####
 
-# Total vessels
-#
-# Plot: x-axis = sites, y-axis = proportion hours with vessel present (single value per deployment)
-#
-# Proportion of hours with vessel present for total deployment
-all_ves_prop_hrs <- all_sites_hp |>
+
+# Proportion of hours with vessel present per day for total deployment
+
+all_ves_prop_hrs_day <- all_sites_hp |>
   # group by y/n column
-  group_by(network, npz_id, Site_ID, Dep, Date_week, ves_yn) |>
+  group_by(network, npz_id, Site_ID, Dep, Date_week, Begin_Date_loc, 
+           ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
   mutate(freq = n_hours/sum(n_hours)) |>
@@ -277,8 +303,12 @@ all_ves_prop_hrs <- all_sites_hp |>
                values_to = "Perc_per_hour") |>
   mutate(network = factor(network, levels = c("Temperate East","Northwest","South-west")))
 
-# Try to plot!
-ggplot(data = all_ves_prop_hrs |> 
+
+write_csv(all_ves_prop_hrs_day, "output/All_ves_prophr_day.csv")
+
+
+# Plot proportion of hours present per day
+ggplot(data = all_ves_prop_hrs_day |> 
          # only want to plot presence
          filter(ves_yn == "Y"),
        aes(x = npz_id,
@@ -304,15 +334,75 @@ ggplot(data = all_ves_prop_hrs |>
              space = "free", 
              drop = TRUE) +
   labs(x = "NPZ",
-       y = "Proportion hours per week with vessels") +
+       y = "Proportion hours per day with vessels") +
   theme(
     strip.text.x = element_text(face = "bold"),
     axis.text.x = element_text(face = "bold")
   )
 
-ggsave(paste0("figs/", "Prop_hrs_boxplot_by_dep.png"), width=10, height=6,
+ggsave(paste0("figs/", "Prop_hrs_boxplot_by_dep_day.png"), width=10, height=6,
        units="in", dpi=300)
 
+
+
+# Proportion of hours with vessel present per day for total deployment
+
+all_ves_prop_hrs_week <- all_sites_hp |>
+  # group by y/n column
+  group_by(network, npz_id, Site_ID, Dep, Date_week, 
+           ves_yn) |>
+  # get total number of hours for Y and N groups per each hour per deployment
+  summarize(n_hours = n())|>
+  mutate(freq = n_hours/sum(n_hours)) |>
+  ungroup() |>
+  complete(Site_ID, ves_yn,
+           fill = list(ves_yn = "Y", freq = 0)) |>
+  group_by(Site_ID, ves_yn) |>
+  # reshape for easier plotting
+  pivot_longer(cols = c("freq"),
+               values_to = "Perc_per_hour") |>
+  mutate(network = factor(network, levels = c("Temperate East","Northwest","South-west")))
+
+write_csv(all_ves_prop_hrs_week, "output/All_ves_prophr_week.csv")
+
+
+
+
+# Plot proportion of hours present per week
+ggplot(data = all_ves_prop_hrs_week |> 
+         # only want to plot presence
+         filter(ves_yn == "Y"),
+       aes(x = npz_id,
+           y = Perc_per_hour,
+           fill = network,
+           color = network))+
+  geom_boxplot(aes(group = Dep),
+               position = position_dodge2(preserve = "single"),
+               alpha = 0.5,
+               width = 0.5)+
+  # geom_point(aes(group = Dep),
+  #            alpha = 0.5, 
+  #            position = position_jitterdodge(dodge.width = 0.25,
+  #                                            jitter.width = 0)) +
+  scale_fill_viridis_d(end = 0.75,
+                       direction = -1,
+                       guide = "none")+
+  scale_color_viridis_d(end = 0.75,
+                        direction = -1,
+                        guide = "none")+
+  facet_grid(~network, 
+             scales = "free_x", 
+             space = "free", 
+             drop = TRUE) +
+  labs(x = "NPZ",
+       y = "Proportion hours per day with vessels") +
+  theme(
+    strip.text.x = element_text(face = "bold"),
+    axis.text.x = element_text(face = "bold")
+  )
+
+ggsave(paste0("figs/", "Prop_hrs_boxplot_by_dep_week.png"), width=10, height=6,
+       units="in", dpi=300)
 
 
 
