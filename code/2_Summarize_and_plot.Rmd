@@ -7,7 +7,7 @@ output: html_document
 
 ## Load libraries
 
-```{r load libraries and helper script}
+```{r load libraries and helper script, include=FALSE, echo=FALSE}
 
 #### Load libraries ####
 
@@ -130,23 +130,48 @@ Raw total counts per deployments and vessels inside the NPZs
 
 ```{r total presence}
 
+# summarize in-out data to get n vessels used for I-O analysis per deployment
+ins_out_counts <- all_sites_inout |>
+  group_by(Dep_ID) |>
+  summarize(n_ves_used_inout = n()) |>
+  rename("Dep" = "Dep_ID")
+
+# summarize full df to get counts per deployment
 all_ves_by_site <- all_sites_hp |>
   group_by(network, npz_id, Site_ID, Dep) |>
   summarise(n_days = n_distinct(Begin_Date_loc),
             Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
-            Total_inside_ves_dep = sum(total_inside, na.rm = TRUE),
-            Total_inside_ves_small = sum(total_inside_small, na.rm = TRUE),
+            Total_inside = sum(total_inside, na.rm = TRUE),
+            Total_inside_small = sum(total_inside_small, na.rm = TRUE),
             Inside_maneuver = sum(man_inside, na.rm = TRUE),
-            Inside_maneuver_small = sum(man_inside_small, na.rm = TRUE)) |>
-  mutate(Inside_transit = Total_inside_ves_dep - Inside_maneuver,
-         Inside_transit_small = Total_inside_ves_small - Inside_maneuver_small)
+            Inside_maneuver_small = sum(man_inside_small, na.rm = TRUE),
+            mean_per_day = Total_ves_dep/n_days,
+            mean_overall = mean(Total_Vessels)) |>
+  mutate(Inside_transit = Total_inside - Inside_maneuver,
+         Inside_transit_small = Total_inside_small - Inside_maneuver_small) |>
+  left_join(ins_out_counts, by = "Dep") |>
+  mutate(
+    prop_inside = Total_inside/n_ves_used_inout,
+    total_outside = n_ves_used_inout - Total_inside,
+    prop_inside_small = Total_inside_small/n_ves_used_inout,
+    total_out_small = n_ves_used_inout - Total_inside_small)
 
 
 all_ves_long <- all_ves_by_site |>
   pivot_longer(cols = -c(network, npz_id, Site_ID, Dep, n_days), values_to = "Ves_counts", names_to = "Ves_behav") |>
+  # relevel categorical values for plotting
   mutate(Ves_behav = fct(Ves_behav),
-         Ves_behav = fct_relevel(Ves_behav, c("Total_ves_dep","Total_inside_ves_small", "Total_inside_ves_dep", "Inside_transit_small","Inside_maneuver_small", "Inside_transit","Inside_maneuver")))
+         Ves_behav = fct_relevel(Ves_behav, c("Total_ves_dep","Total_inside_small", "Total_inside", "Inside_transit_small","Inside_maneuver_small", "Inside_transit","Inside_maneuver")),
+         network = fct(network),
+         network = fct_relevel(network, c("Temperate East","Northwest"))) |>
+  # add diverging counts where inside values are negative for plotting
+  mutate(ves_counts_diverge = ifelse(Ves_behav == "Total_inside" | Ves_behav == "Total_inside_small",Ves_counts*(-1),Ves_counts),
+         npz_id = fct(npz_id),
+         npz_id = fct_relevel(npz_id, c("CGMP","SIMP","DMP","NMP")))
+```
 
+
+```{r plots by deployment}
 ggplot(data = all_ves_by_site,
        aes(x = Dep,
            y = Total_ves_dep,
@@ -166,6 +191,8 @@ ggplot(data = all_ves_by_site,
     strip.text.x = element_text(face = "bold")
     )
 
+
+# counts including inside-outside
 ggplot(data = all_ves_long,
        aes(x = npz_id,
            y = Ves_counts,
@@ -185,7 +212,96 @@ ggplot(data = all_ves_long,
     )
 
 
+# try inside vs outside proportion plot (fill to equal 1.0)
+ggplot(data = all_ves_long |> 
+         filter(Ves_behav == "total_outside" |
+               Ves_behav == "Total_inside",
+               npz_id != "SWCMP"),
+       aes(x = npz_id,
+           y = Ves_counts,
+           fill = Ves_behav)) +
+  geom_col(position = position_fill(reverse = TRUE)) +
+  scale_fill_viridis_d(direction = -1)+
+  labs(x = "NPZ",
+       y = "Proportion vessels",
+       fill = "Inside vs. Outside",
+       title = "Inside-Outside Proportions") +
+  theme(
+    # axis.text.x = element_text(angle = 90),
+    strip.text.x = element_text(face = "bold")
+    )
+
+
+# try diverging bar plot
+
+breakvals <- seq(-200, 800, 200)
+
+ggplot(data = all_ves_long |> 
+         filter(Ves_behav == "total_outside" |
+               Ves_behav == "Total_inside",
+               npz_id != "SWCMP"),
+       aes(x = npz_id,
+           y = ves_counts_diverge,
+           fill = Ves_behav)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  coord_flip()+
+  scale_y_continuous(limits = c(-200, 800),
+                     breaks = breakvals, 
+                     labels = abs(breakvals))+
+  scale_fill_viridis_d(direction = -1)+
+  labs(x = "NPZ",
+       y = "N vessels",
+       fill = "Inside vs. Outside",
+       title = "Inside-Outside Totals") +
+  facet_grid(rows = vars(network),
+             scales = "free",
+             space = "free",
+             drop = TRUE)+
+  theme(
+    # axis.text.x = element_text(angle = 90),
+    strip.text.y = element_text(face = "bold")
+    )
+
+ggsave(paste0("figs/", "Ins_out_counts_npz.png"), width=10, height=6,
+       units="in", dpi=300)
+
+# Small vessels inside-outside
+
+breakvals_small <- seq(-600, 600, 200)
+
+ggplot(data = all_ves_long |> 
+         filter(Ves_behav == "total_out_small" |
+               Ves_behav == "Total_inside_small",
+               npz_id != "SWCMP"),
+       aes(x = npz_id,
+           y = ves_counts_diverge,
+           fill = Ves_behav)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  coord_flip()+
+  scale_y_continuous(limits = c(-600, 600),
+                     breaks = breakvals_small, 
+                     labels = abs(breakvals_small))+
+  scale_fill_viridis_d(direction = -1)+
+  labs(x = "NPZ",
+       y = "N vessels",
+       fill = "Inside vs. Outside",
+       title = "Inside-Outside Counts (Small Vessels)") +
+   facet_grid(rows = vars(network),
+             scales = "free",
+             space = "free",
+             drop = TRUE)+
+  theme(
+    # axis.text.x = element_text(angle = 90),
+    strip.text.y = element_text(face = "bold")
+    )
+
+ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=6,
+       units="in", dpi=300)
+
+
 ```
+
+
 
 ### Export CSV summary tables
 
