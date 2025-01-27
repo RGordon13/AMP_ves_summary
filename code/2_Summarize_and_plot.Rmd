@@ -127,6 +127,7 @@ Add in dates without coverage
 ### Total vessel presence per deployment
 
 Raw total counts per deployments and vessels inside the NPZs
+Deployment-level and NPZ-level info
 
 ```{r total presence}
 
@@ -339,7 +340,8 @@ ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=6,
 # Total vessel presence
 write_csv(all_ves_by_site, 
           file = "output/All_ves_by_dep.csv")
-
+write_csv(all_ves_by_npz, 
+          file = "output/All_ves_by_npz.csv")
 
 
 ```
