@@ -157,6 +157,35 @@ all_ves_by_site <- all_sites_hp |>
     total_out_small = n_ves_used_inout - Total_inside_small)
 
 
+all_ves_by_npz <- all_sites_hp |>
+  group_by(network, npz_id, Site_ID, Dep) |>
+  left_join(ins_out_counts, by = "Dep") |>
+  ungroup() |>
+  group_by(network, npz_id) |>
+  summarise(n_days = n_distinct(Begin_Date_loc),
+            Total_ves_npz = sum(Total_Vessels, na.rm = TRUE),
+            Total_inside = sum(total_inside, na.rm = TRUE),
+            Total_inside_small = sum(total_inside_small, na.rm = TRUE),
+            
+            Inside_maneuver = sum(man_inside, na.rm = TRUE),
+            
+            Inside_maneuver_small = sum(man_inside_small, na.rm = TRUE),
+            mean_per_day = Total_ves_npz/n_days,
+            
+            n_used_inout = sum(n_ves_used_inout),
+            
+            mean_overall = mean(Total_Vessels),
+           ) |>
+  mutate(Inside_transit = Total_inside - Inside_maneuver,
+         Inside_transit_small = Total_inside_small - Inside_maneuver_small,
+         total_outside = n_used_inout - Total_inside,
+         total_out_small = n_used_inout - Total_inside_small,
+         prop_inside = Total_inside/n_used_inout,
+         prop_inside_small = Total_inside_small/sum(n_used_inout))
+
+
+
+
 all_ves_long <- all_ves_by_site |>
   pivot_longer(cols = -c(network, npz_id, Site_ID, Dep, n_days), values_to = "Ves_counts", names_to = "Ves_behav") |>
   # relevel categorical values for plotting
