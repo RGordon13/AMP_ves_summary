@@ -484,9 +484,73 @@ wkdy_prop_long <- wkdy_prop_table |>
 
 
 
+# TO DO:
+# - calculate A-C confidence intervals for each proportion
+# - add CI's to plot
+
 ```
 
 
+## Plotting weekday proportions
+
+```{r weekday plots}
+
+
+wkday_prop_total <- wkdy_prop_long |>
+  filter(Ves_behav == "tot_prop")
+
+ggplot(data = wkday_prop_total |> filter (npz_id != "MMP"),
+       aes(x = Weekday, 
+           y = Weekday_prop)) +
+  geom_col(aes(fill = network),
+           position = position_dodge()) +
+  scale_fill_viridis_d(end = 0.75, direction = -1)+
+  labs(y = "Proportion", 
+       x = "Weekday", 
+       fill = "Network")+  
+  facet_grid(rows = vars(npz_id)) +
+   theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.text.y = element_text(face = "bold")
+    )
+
+
+
+ggsave(paste0("figs/", "Weekday_props_npz.png"), width=8, height=10,
+       units="in", dpi=300)
+
+
+
+
+wkday_prop_ins <- wkdy_prop_long |>
+  filter(Ves_behav == "ins_prop" | Ves_behav == "ins_trans_prop" | Ves_behav == "ins_man_prop")
+
+ggplot(data = wkday_prop_ins |> filter (npz_id != "MMP" & npz_id != "SWCMP"),
+       aes(x = Weekday, 
+           y = Weekday_prop)) +
+  geom_col(aes(fill = Ves_behav),
+           position = position_dodge()) +
+  scale_fill_viridis_d(end = 0.75, direction = -1)+
+  labs(y = "Proportion", 
+       x = "Weekday", 
+       fill = "Network")+  
+  facet_grid(rows = vars(npz_id),
+             cols = vars(Ves_behav)) +
+   theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.text.y = element_text(face = "bold")
+    )
+
+
+
+ggsave(paste0("figs/", "Weekday_props_npz_inside.png"), width=8, height=10, units="in", dpi=300)
+
+
+
+
+
+
+```
 
 
 
