@@ -173,7 +173,7 @@ all_ves_by_npz <- all_sites_hp |>
             Inside_maneuver_small = sum(man_inside_small, na.rm = TRUE),
             mean_per_day = Total_ves_npz/n_days,
             
-            n_used_inout = sum(n_ves_used_inout),
+            n_used_inout = sum(unique(n_ves_used_inout)),
             
             mean_overall = mean(Total_Vessels),
            ) |>
@@ -183,7 +183,6 @@ all_ves_by_npz <- all_sites_hp |>
          total_out_small = n_used_inout - Total_inside_small,
          prop_inside = Total_inside/n_used_inout,
          prop_inside_small = Total_inside_small/sum(n_used_inout))
-
 
 
 
@@ -242,7 +241,7 @@ ggplot(data = all_ves_long,
     )
 
 
-# try inside vs outside proportion plot (fill to equal 1.0)
+# inside vs outside proportion plot (fill to equal 1.0)
 ggplot(data = all_ves_long |> 
          filter(Ves_behav == "total_outside" |
                Ves_behav == "Total_inside",
@@ -261,15 +260,17 @@ ggplot(data = all_ves_long |>
     strip.text.x = element_text(face = "bold")
     )
 
-
-# try diverging bar plot
+####
+# Diverging bar plot - NPZ
+#### 
 
 breakvals <- seq(-200, 800, 200)
 
 ggplot(data = all_ves_long |> 
          filter(Ves_behav == "total_outside" |
                Ves_behav == "Total_inside",
-               npz_id != "SWCMP"),
+               npz_id != "SWCMP",
+               npz_id != "MMP"),
        aes(x = npz_id,
            y = ves_counts_diverge,
            fill = Ves_behav)) +
@@ -292,8 +293,8 @@ ggplot(data = all_ves_long |>
     strip.text.y = element_text(face = "bold")
     )
 
-# ggsave(paste0("figs/", "Ins_out_counts_npz.png"), width=10, height=6,
-#        units="in", dpi=300)
+ggsave(paste0("figs/", "Ins_out_counts_npz.png"), width=10, height=6,
+       units="in", dpi=300)
 
 # Small vessels inside-outside
 
@@ -325,11 +326,159 @@ ggplot(data = all_ves_long |>
     strip.text.y = element_text(face = "bold")
     )
 
-# ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=6,
-#        units="in", dpi=300)
+ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=6,
+       units="in", dpi=300)
 
 
 ```
+
+
+### Diverging bar plot by Deployment
+
+```{r div bar by dep}
+
+####
+# Diverging bar plot - NPZ
+#### 
+
+breakvals <- seq(-400, 800, 50)
+
+ggplot(data = all_ves_long |> 
+         filter(Ves_behav == "total_outside" |
+               Ves_behav == "Total_inside",
+               npz_id != "SWCMP",
+               npz_id != "MMP"),
+       aes(x = Dep,
+           y = ves_counts_diverge,
+           fill = Ves_behav)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  coord_flip()+
+  scale_y_continuous(limits = c(-400, 400),
+                     breaks = breakvals, 
+                     labels = abs(breakvals))+
+  scale_fill_viridis_d(direction = -1)+
+  labs(x = "NPZ",
+       y = "N vessels",
+       fill = "Inside vs. Outside",
+       title = "Inside-Outside Totals") +
+  facet_grid(vars(npz_id),
+             scales = "free",
+             space = "free",
+             drop = TRUE)+
+  theme(
+    # axis.text.x = element_text(angle = 90),
+    strip.text.y = element_text(face = "bold")
+    )
+
+ggsave(paste0("figs/", "Ins_out_counts_dep.png"), width=10, height=8,
+       units="in", dpi=300)
+
+# Small vessels inside-outside
+
+breakvals_small <- seq(-600, 600, 50)
+
+ggplot(data = all_ves_long |> 
+         filter(Ves_behav == "total_out_small" |
+               Ves_behav == "Total_inside_small",
+               npz_id != "SWCMP",
+               npz_id != "MMP"),
+       aes(x = Dep,
+           y = ves_counts_diverge,
+           fill = Ves_behav)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  coord_flip()+
+  scale_y_continuous(limits = c(-400, 400),
+                     breaks = breakvals_small, 
+                     labels = abs(breakvals_small))+
+  scale_fill_viridis_d(direction = -1)+
+  labs(x = "NPZ",
+       y = "N vessels",
+       fill = "Inside vs. Outside",
+       title = "Inside-Outside Counts (Small Vessels)") +
+   facet_grid(rows = vars(npz_id),
+             scales = "free",
+             space = "free",
+             drop = TRUE)+
+  theme(
+    # axis.text.x = element_text(angle = 90),
+    strip.text.y = element_text(face = "bold")
+    )
+
+ggsave(paste0("figs/", "Ins_out_counts_small_dep.png"), width=10, height=8,
+       units="in", dpi=300)
+
+
+
+
+```
+
+
+
+## Weekday patterns
+
+Of days with vessels present, what proportion occurred on each weekday?
+
+
+```{r reshape for weekday}
+
+# from full hp dataset
+# group down to date level to get daily vessel counts for each category (total, inside, inside_small, transit, maneuver)
+# remove any days without vessels present
+# group by deployment and weekday
+# get proportion of vessels for each category occurring on each weekday
+# 
+
+all_ves_wkdy <- all_sites_hp |>
+  group_by(network, npz_id, Site_ID, Dep, Weekday)|>
+  # get daily vessel counts: total, inside, inside_small, maneuver, maneuver_small
+    summarise(Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
+            Total_inside = sum(total_inside, na.rm = TRUE),
+            Total_inside_small = sum(total_inside_small, na.rm = TRUE),
+            Inside_maneuver = sum(man_inside, na.rm = TRUE),
+            Inside_maneuver_small = sum(man_inside_small, na.rm = TRUE)) |>
+  mutate(Inside_transit = Total_inside - Inside_maneuver,
+         Inside_transit_small = Total_inside_small - Inside_maneuver_small) |>
+  filter(Total_ves_dep > 0) 
+
+wkdy_prop_table <- all_ves_wkdy |>
+  group_by(network, npz_id, Site_ID, Dep) |>
+  mutate(tot_wkday_prop = Total_ves_dep/sum(Total_ves_dep))
+  
+  
+
+
+
+
+
+# other code from above included here for reference:
+all_sites_hp |>
+  group_by(network, npz_id, Site_ID, Dep) |>
+  summarise(n_days = n_distinct(Begin_Date_loc),
+            Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
+            Total_inside = sum(total_inside, na.rm = TRUE),
+            Total_inside_small = sum(total_inside_small, na.rm = TRUE),
+            Inside_maneuver = sum(man_inside, na.rm = TRUE),
+            Inside_maneuver_small = sum(man_inside_small, na.rm = TRUE),
+            mean_per_day = Total_ves_dep/n_days,
+            mean_overall = mean(Total_Vessels)) |>
+  mutate(Inside_transit = Total_inside - Inside_maneuver,
+         Inside_transit_small = Total_inside_small - Inside_maneuver_small) |>
+  left_join(ins_out_counts, by = "Dep") |>
+  mutate(
+    prop_inside = Total_inside/n_ves_used_inout,
+    total_outside = n_ves_used_inout - Total_inside,
+    prop_inside_small = Total_inside_small/n_ves_used_inout,
+    total_out_small = n_ves_used_inout - Total_inside_small)
+
+
+
+```
+
+
+
+
+
+
 
 
 
