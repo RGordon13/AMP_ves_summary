@@ -163,7 +163,7 @@ all_ves_by_npz <- all_sites_hp |>
   left_join(ins_out_counts, by = "Dep") |>
   ungroup() |>
   group_by(network, npz_id) |>
-  summarise(n_days = n_distinct(Begin_Date_loc),
+  summarise(n_days = n_distinct(Site_ID, Begin_Date_loc),
             Total_ves_npz = sum(Total_Vessels, na.rm = TRUE),
             Total_inside = sum(total_inside, na.rm = TRUE),
             Total_inside_small = sum(total_inside_small, na.rm = TRUE),
@@ -292,8 +292,8 @@ ggplot(data = all_ves_long |>
     strip.text.y = element_text(face = "bold")
     )
 
-ggsave(paste0("figs/", "Ins_out_counts_npz.png"), width=10, height=6,
-       units="in", dpi=300)
+# ggsave(paste0("figs/", "Ins_out_counts_npz.png"), width=10, height=6,
+#        units="in", dpi=300)
 
 # Small vessels inside-outside
 
@@ -325,8 +325,8 @@ ggplot(data = all_ves_long |>
     strip.text.y = element_text(face = "bold")
     )
 
-ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=6,
-       units="in", dpi=300)
+# ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=6,
+#        units="in", dpi=300)
 
 
 ```
