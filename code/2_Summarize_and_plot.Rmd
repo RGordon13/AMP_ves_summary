@@ -431,44 +431,56 @@ Of days with vessels present, what proportion occurred on each weekday?
 all_ves_wkdy <- all_sites_hp |>
   group_by(network, npz_id, Site_ID, Dep, Weekday)|>
   # get daily vessel counts: total, inside, inside_small, maneuver, maneuver_small
-    summarise(Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
+  summarise(Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
             Total_inside = sum(total_inside, na.rm = TRUE),
             Total_inside_small = sum(total_inside_small, na.rm = TRUE),
             Inside_maneuver = sum(man_inside, na.rm = TRUE),
             Inside_maneuver_small = sum(man_inside_small, na.rm = TRUE)) |>
   mutate(Inside_transit = Total_inside - Inside_maneuver,
-         Inside_transit_small = Total_inside_small - Inside_maneuver_small) |>
+         Inside_transit_small = Total_inside_small - Inside_maneuver_small, 
+         Weekday = factor(Weekday, levels=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")),
+         network = case_when(Site_ID == "CG" | Site_ID == "EP" | Site_ID == "WP" ~ "Temperate East",
+                             Site_ID == "DNE" | Site_ID == "DSW" | Site_ID == "NGN"| Site_ID == "NGS" ~ "Northwest", TRUE ~ "South-west"
+         ),
+         network = factor(network, levels = c("Temperate East","Northwest","South-west"))) |>
   filter(Total_ves_dep > 0) 
+
+levels(all_ves_wkdy$Weekday) <- c("M","T","W","R","F","Sa","Su")
+
+
+# function to calculate Agresti-Coull interval
+# from https://towardsdatascience.com/five-confidence-intervals-for-proportions-that-you-should-know-about-7ff5484c024f
+AgrestiInterval <- function(x, n, conf.level = 0.95){
+ p <- (x+2)/(n+4)
+ sd <- sqrt(p*((1-p)/(n+4)))
+ z <- qnorm(c( (1 - conf.level)/2, 1- (1-conf.level)/2)) #returns the value of thresholds at which conf.level has to be cut at. for 95% CI, this is -1.96 and +1.96
+ ci <- p + z*sd
+ return(ci)
+ }
 
 wkdy_prop_table <- all_ves_wkdy |>
   group_by(network, npz_id, Site_ID, Dep) |>
-  mutate(tot_wkday_prop = Total_ves_dep/sum(Total_ves_dep))
-  
-  
-
-
-
-
-
-# other code from above included here for reference:
-all_sites_hp |>
-  group_by(network, npz_id, Site_ID, Dep) |>
-  summarise(n_days = n_distinct(Begin_Date_loc),
-            Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
-            Total_inside = sum(total_inside, na.rm = TRUE),
-            Total_inside_small = sum(total_inside_small, na.rm = TRUE),
-            Inside_maneuver = sum(man_inside, na.rm = TRUE),
-            Inside_maneuver_small = sum(man_inside_small, na.rm = TRUE),
-            mean_per_day = Total_ves_dep/n_days,
-            mean_overall = mean(Total_Vessels)) |>
   mutate(Inside_transit = Total_inside - Inside_maneuver,
-         Inside_transit_small = Total_inside_small - Inside_maneuver_small) |>
-  left_join(ins_out_counts, by = "Dep") |>
-  mutate(
-    prop_inside = Total_inside/n_ves_used_inout,
-    total_outside = n_ves_used_inout - Total_inside,
-    prop_inside_small = Total_inside_small/n_ves_used_inout,
-    total_out_small = n_ves_used_inout - Total_inside_small)
+         Inside_transit_small = Total_inside_small - Inside_maneuver_small,
+         tot_prop = Total_ves_dep/sum(Total_ves_dep),
+         ins_prop = Total_inside/sum(Total_inside),
+         small_prop = Total_inside_small/sum(Total_inside_small),
+         ins_trans_prop = Inside_transit/sum(Inside_transit),
+         small_trans_prop = Inside_transit_small/sum(Inside_transit_small),
+         ins_man_prop = Inside_maneuver/sum(Inside_maneuver),
+         small_man_prop = Inside_maneuver_small/sum(Inside_maneuver_small))
+
+wkdy_prop_long <- wkdy_prop_table |>
+  pivot_longer(cols = -c(network, npz_id, Site_ID, Dep, Weekday), 
+               values_to = "Weekday_prop", names_to = "Ves_behav") |>
+  filter(grepl("prop", Ves_behav)) |>
+  # relevel categorical values for plotting
+  mutate(Ves_behav = fct(Ves_behav),
+         Ves_behav = fct_relevel(Ves_behav, c("tot_prop","small_prop", "ins_prop", "small_trans_prop","small_man_prop", "ins_trans_prop","ins_man_prop")),
+         # network = fct(network),
+         network = fct_relevel(network, c("Temperate East","Northwest")), 
+         npz_id = fct(npz_id),
+         npz_id = fct_relevel(npz_id, c("CGMP","SIMP","DMP","NMP")))
 
 
 
@@ -491,6 +503,7 @@ write_csv(all_ves_by_site,
           file = "output/All_ves_by_dep.csv")
 write_csv(all_ves_by_npz, 
           file = "output/All_ves_by_npz.csv")
-
+write_csv(all_ves_wkdy, 
+          file = "output/All_ves_by_weekday.csv")
 
 ```
