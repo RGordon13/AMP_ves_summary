@@ -2,7 +2,9 @@
 title: "AMP_ves_summary_plots"
 author: "Jessica McCordic"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ## Load libraries
