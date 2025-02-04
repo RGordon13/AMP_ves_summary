@@ -496,10 +496,10 @@ Daily proportion of hours present, summarized by weekday
 When those are summarized by Weekday, what's the median value for each weekday at each NPZ?"
 
 ```{r weekday proportion hours}
-
-wkdy_prop_hr <- all_sites_hp |>
-  group_by() |>
-  mutate() |>
+# 
+# wkdy_prop_hr <- all_sites_hp |>
+#   group_by() |>
+#   mutate() |>
   
 
 
@@ -509,38 +509,38 @@ wkdy_prop_hr <- all_sites_hp |>
 # proportions summarized by weekday? i.e., should have a separate point for each time a weekday occurred
 # e.g., if deployment was 4 weeks, Thursday might be {0.15, 0.11, 0.23, 0.20} vs. Monday = {0.01, 0.02, 0.01, 0.03}
 # might need to do ves_yn by date, then summarize/group by weekday or something
-
-ggplot(data = all_perc_weekday |> 
-         filter(ves_yn == "Y",
-                !is.na(npz_id),
-                network == "Temperate East"),
-       aes(x = Weekday,
-           y = Perc_per_hour,
-           fill = Dep,
-           color = Dep))+
-  geom_boxplot(
-    position = position_dodge2(preserve = "single"),
-    alpha = 0.75,
-    width = 0.5)+
-  scale_fill_viridis_d(end = 0.75,
-                       direction = -1
-  )+
-  scale_color_viridis_d(end = 0.75,
-                        direction = -1,
-                        guide = "none")+
-  facet_grid(rows = vars(npz_id),
-             drop = TRUE) +
-  labs(x = "Weekday",
-       y = "Proportion hours per weekday",
-       fill = "NPZ") +
-  theme(
-    strip.text.y = element_text(face = "bold"),
-    axis.text.y = element_text(face = "bold"),
-    axis.text.x = element_text(face = "bold")
-  )
-
-ggsave(paste0("figs/", "Weekday_prop_hrs_npz_southwest.png"), width=6, height=10,
-       units="in", dpi=300)
+# 
+# ggplot(data = all_perc_weekday |> 
+#          filter(ves_yn == "Y",
+#                 !is.na(npz_id),
+#                 network == "Temperate East"),
+#        aes(x = Weekday,
+#            y = Perc_per_hour,
+#            fill = Dep,
+#            color = Dep))+
+#   geom_boxplot(
+#     position = position_dodge2(preserve = "single"),
+#     alpha = 0.75,
+#     width = 0.5)+
+#   scale_fill_viridis_d(end = 0.75,
+#                        direction = -1
+#   )+
+#   scale_color_viridis_d(end = 0.75,
+#                         direction = -1,
+#                         guide = "none")+
+#   facet_grid(rows = vars(npz_id),
+#              drop = TRUE) +
+#   labs(x = "Weekday",
+#        y = "Proportion hours per weekday",
+#        fill = "NPZ") +
+#   theme(
+#     strip.text.y = element_text(face = "bold"),
+#     axis.text.y = element_text(face = "bold"),
+#     axis.text.x = element_text(face = "bold")
+#   )
+# 
+# ggsave(paste0("figs/", "Weekday_prop_hrs_npz_southwest.png"), width=6, height=10,
+#        units="in", dpi=300)
 
 
 
