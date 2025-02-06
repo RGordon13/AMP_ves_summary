@@ -497,6 +497,7 @@ all_perc_weekday <- all_sites_hp |>
   group_by(network, npz_id, Site_ID, Dep, Date_noyr, Begin_Date_loc, Weekday, ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
+  filter(sum(n_hours) == 24) |>
   mutate(freq = n_hours/sum(n_hours)) |>
   # ungroup to fill in any missing values for columns
   ungroup() |>
@@ -516,7 +517,27 @@ all_perc_weekday <- all_sites_hp |>
 levels(all_perc_weekday$Weekday) <- c("M","T","W","R","F","Sa","Su")
 
 
+# summarize proportion hours present
 
+perc_wkdy_summ_dep <- all_perc_weekday |>
+  filter(ves_yn == "Y") |>
+  ungroup()|>
+  group_by(network, npz_id, Site_ID, Dep, Weekday)|>
+  summarise(median_prop = median(Perc_per_hour),
+            qt25 = quantile(Perc_per_hour, probs = 0.25),
+            qt75 = quantile(Perc_per_hour, probs = 0.75),
+            min_perc = min(Perc_per_hour, na.rm = TRUE),
+            max_perc = max(Perc_per_hour, na.rm = TRUE))
+
+perc_wkdy_summ_npz <- all_perc_weekday |>
+  filter(ves_yn == "Y") |>
+  ungroup()|>
+  group_by(network, npz_id, Weekday)|>
+  summarise(median_prop = median(Perc_per_hour),
+            qt25 = quantile(Perc_per_hour, probs = 0.25),
+            qt75 = quantile(Perc_per_hour, probs = 0.75),
+            min_perc = min(Perc_per_hour, na.rm = TRUE),
+            max_perc = max(Perc_per_hour, na.rm = TRUE))
 
 ```
 
@@ -655,7 +676,7 @@ ggsave(paste0("figs/", "Weekday_prop_hrs_npz_southwest.png"), width=6, height=10
 wkday_prop_total <- wkdy_prop_long |>
   filter(Ves_behav == "tot_prop")
 
-ggplot(data = wkday_prop_total |> filter (npz_id != "MMP"),
+ggplot(data = wkday_prop_total,
        aes(x = Weekday, 
            y = Weekday_prop)) +
   geom_col(aes(fill = network),
@@ -725,5 +746,12 @@ write_csv(all_ves_by_npz,
           file = "output/All_ves_by_npz.csv")
 write_csv(all_ves_wkdy, 
           file = "output/All_ves_by_weekday.csv")
+
+write_csv(all_perc_weekday, 
+          file = "output/All_ves_prophr_weekday.csv")
+write_csv(perc_wkdy_summ_npz, 
+          file = "output/All_ves_prophr_weekday_npz.csv")
+write_csv(perc_wkdy_summ_dep, 
+          file = "output/All_ves_prophr_weekday_dep.csv")
 
 ```
