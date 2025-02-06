@@ -69,6 +69,13 @@ all_sites_hp <- all_sites_hp |>
     # get start date for each week
     Date_week = as_date(paste(Week,"1",sep = "-"), format = "%U-%u"),
     
+    # add season based on month
+    season = case_when(month(Date_noyr) == 12 | month(Date_noyr) == 1 | month(Date_noyr) == 2 ~ "Summer",
+                       month(Date_noyr) == 3 | month(Date_noyr) == 4 | month(Date_noyr) == 5 ~ "Autumn",
+                       month(Date_noyr) == 6 | month(Date_noyr) == 7 | month(Date_noyr) == 8 ~ "Winter",
+                        TRUE ~ "Spring"
+    ),
+    
     # add AMP Regional Networks and NPZ IDs based on Site_ID
     network = case_when(Site_ID == "CG" | Site_ID == "EP" | Site_ID == "WP" ~ "Temperate East",
                         Site_ID == "DNE" | Site_ID == "DSW" | Site_ID == "NGN"| Site_ID == "NGS" ~ "Northwest",
