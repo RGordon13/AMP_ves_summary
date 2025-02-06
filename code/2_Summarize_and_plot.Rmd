@@ -271,8 +271,7 @@ breakvals <- seq(-200, 800, 200)
 ggplot(data = all_ves_long |> 
          filter(Ves_behav == "total_outside" |
                Ves_behav == "Total_inside",
-               npz_id != "SWCMP",
-               npz_id != "MMP"),
+               npz_id != "SWCMP"),
        aes(x = npz_id,
            y = ves_counts_diverge,
            fill = Ves_behav)) +
@@ -348,8 +347,7 @@ breakvals <- seq(-400, 800, 50)
 ggplot(data = all_ves_long |> 
          filter(Ves_behav == "total_outside" |
                Ves_behav == "Total_inside",
-               npz_id != "SWCMP",
-               npz_id != "MMP"),
+               npz_id != "SWCMP"),
        aes(x = Dep,
            y = ves_counts_diverge,
            fill = Ves_behav)) +
@@ -382,8 +380,7 @@ breakvals_small <- seq(-600, 600, 50)
 ggplot(data = all_ves_long |> 
          filter(Ves_behav == "total_out_small" |
                Ves_behav == "Total_inside_small",
-               npz_id != "SWCMP",
-               npz_id != "MMP"),
+               npz_id != "SWCMP"),
        aes(x = Dep,
            y = ves_counts_diverge,
            fill = Ves_behav)) +
@@ -427,7 +424,7 @@ Of days with vessels present, what proportion occurred on each weekday?
 # group down to date level to get daily vessel counts for each category (total, inside, inside_small, transit, maneuver)
 # remove any days without vessels present
 # group by deployment and weekday
-# get proportion of vessels for each category occurring on each weekday
+# get proportion of vessel counts for each category occurring on each weekday
 # 
 
 all_ves_wkdy <- all_sites_hp |>
@@ -490,6 +487,37 @@ wkdy_prop_long <- wkdy_prop_table |>
 # - calculate A-C confidence intervals for each proportion
 # - add CI's to plot
 
+
+
+#### Proportional by hours present rather than counts ####
+
+# start with full hp dataset
+all_perc_weekday <- all_sites_hp |>
+  # group by date to get % presence per day 
+  group_by(network, npz_id, Site_ID, Dep, Date_noyr, Begin_Date_loc, Weekday, ves_yn) |>
+  # get total number of hours for Y and N groups per each hour per deployment
+  summarize(n_hours = n())|>
+  mutate(freq = n_hours/sum(n_hours)) |>
+  # ungroup to fill in any missing values for columns
+  ungroup() |>
+  complete(Dep, Weekday, ves_yn,
+           fill = list(ves_yn = "Y", freq = 0)) |>
+  # regroup
+  group_by(network, npz_id, Site_ID, Dep, Begin_Date_loc, Weekday, ves_yn) |>
+  # reshape for easier plotting
+  pivot_longer(cols = c("freq"),
+               values_to = "Perc_per_hour") |>
+  mutate(Weekday = factor(Weekday, levels=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")),
+          network = case_when(Site_ID == "CG" | Site_ID == "EP" | Site_ID == "WP" ~ "Temperate East",
+                              Site_ID == "DNE" | Site_ID == "DSW" | Site_ID == "NGN"| Site_ID == "NGS" ~ "Northwest",
+                              TRUE ~ "South-west"
+          ),
+          network = factor(network, levels = c("Temperate East","Northwest","South-west")))
+levels(all_perc_weekday$Weekday) <- c("M","T","W","R","F","Sa","Su")
+
+
+
+
 ```
 
 
@@ -511,42 +539,109 @@ When those are summarized by Weekday, what's the median value for each weekday a
 # proportions summarized by weekday? i.e., should have a separate point for each time a weekday occurred
 # e.g., if deployment was 4 weeks, Thursday might be {0.15, 0.11, 0.23, 0.20} vs. Monday = {0.01, 0.02, 0.01, 0.03}
 # might need to do ves_yn by date, then summarize/group by weekday or something
+
+
+## Temperate East
+ggplot(data = all_perc_weekday |>
+         filter(ves_yn == "Y",
+                !is.na(npz_id),
+                network == "Temperate East"),
+       aes(x = Weekday,
+           y = Perc_per_hour,
+           fill = Dep,
+           color = Dep))+
+  geom_boxplot(
+    position = position_dodge2(preserve = "single"),
+    alpha = 0.75,
+    width = 0.5)+
+  scale_fill_viridis_d(end = 0.75,
+                       direction = -1
+  )+
+  scale_color_viridis_d(end = 0.75,
+                        direction = -1,
+                        guide = "none")+
+  facet_grid(rows = vars(npz_id),
+             drop = TRUE) +
+  labs(x = "Weekday",
+       y = "Proportion hours per weekday",
+       fill = "Deployment") +
+  theme(
+    strip.text.y = element_text(face = "bold"),
+    axis.text.y = element_text(face = "bold"),
+    axis.text.x = element_text(face = "bold")
+  )
 # 
-# ggplot(data = all_perc_weekday |> 
-#          filter(ves_yn == "Y",
-#                 !is.na(npz_id),
-#                 network == "Temperate East"),
-#        aes(x = Weekday,
-#            y = Perc_per_hour,
-#            fill = Dep,
-#            color = Dep))+
-#   geom_boxplot(
-#     position = position_dodge2(preserve = "single"),
-#     alpha = 0.75,
-#     width = 0.5)+
-#   scale_fill_viridis_d(end = 0.75,
-#                        direction = -1
-#   )+
-#   scale_color_viridis_d(end = 0.75,
-#                         direction = -1,
-#                         guide = "none")+
-#   facet_grid(rows = vars(npz_id),
-#              drop = TRUE) +
-#   labs(x = "Weekday",
-#        y = "Proportion hours per weekday",
-#        fill = "NPZ") +
-#   theme(
-#     strip.text.y = element_text(face = "bold"),
-#     axis.text.y = element_text(face = "bold"),
-#     axis.text.x = element_text(face = "bold")
-#   )
+ggsave(paste0("figs/", "Weekday_prop_hrs_npz_tempeast_dep.png"), width=6, height=10,
+       units="in", dpi=300)
+
+
+
+
+## Northwest
+ggplot(data = all_perc_weekday |>
+         filter(ves_yn == "Y",
+                !is.na(npz_id),
+                network == "Northwest"),
+       aes(x = Weekday,
+           y = Perc_per_hour,
+           fill = npz_id,
+           color = npz_id))+
+  geom_boxplot(
+    position = position_dodge2(preserve = "single"),
+    alpha = 0.75,
+    width = 0.5)+
+  scale_fill_viridis_d(end = 0.75,
+                       direction = -1
+  )+
+  scale_color_viridis_d(end = 0.75,
+                        direction = -1,
+                        guide = "none")+
+  facet_grid(rows = vars(npz_id),
+             drop = TRUE) +
+  labs(x = "Weekday",
+       y = "Proportion hours per weekday",
+       fill = "NPZ") +
+  theme(
+    strip.text.y = element_text(face = "bold"),
+    axis.text.y = element_text(face = "bold"),
+    axis.text.x = element_text(face = "bold")
+  )
 # 
-# ggsave(paste0("figs/", "Weekday_prop_hrs_npz_southwest.png"), width=6, height=10,
-#        units="in", dpi=300)
+ggsave(paste0("figs/", "Weekday_prop_hrs_npz_northwest.png"), width=6, height=10,
+       units="in", dpi=300)
 
-
-
-
+## South-west
+ggplot(data = all_perc_weekday |>
+         filter(ves_yn == "Y",
+                !is.na(npz_id),
+                network == "South-west"),
+       aes(x = Weekday,
+           y = Perc_per_hour,
+           fill = npz_id,
+           color = npz_id))+
+  geom_boxplot(
+    position = position_dodge2(preserve = "single"),
+    alpha = 0.75,
+    width = 0.5)+
+  scale_fill_viridis_d(end = 0.75,
+                       direction = -1
+  )+
+  scale_color_viridis_d(end = 0.75,
+                        direction = -1,
+                        guide = "none")+
+  facet_grid(rows = vars(npz_id),
+             drop = TRUE) +
+  labs(x = "Weekday",
+       y = "Proportion hours per weekday",
+       fill = "NPZ") +
+  theme(
+    strip.text.y = element_text(face = "bold"),
+    axis.text.y = element_text(face = "bold"),
+    axis.text.x = element_text(face = "bold")
+  )
+# 
+ggsave(paste0("figs/", "Weekday_prop_hrs_npz_southwest.png"), width=6, height=10,
+       units="in", dpi=300)
 
 ```
 
