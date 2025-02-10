@@ -420,12 +420,64 @@ ggsave(paste0("figs/", "Ins_out_counts_small_dep.png"), width=10, height=8,
 
 
 
-## Weekday patterns
+## Temporal patterns
 
-Of days with vessels present, what proportion occurred on each weekday?
+# Weekday patterns
+
+Calculate mean-adjusted totals per weekday, similar to Moussoline et al. 2012 diel presence
+
+- For all full weeks (7d), Calculate weekly mean of daily totals per deployment
+- For each weekday, calculate [daily total - weekly mean]
+- values will be +/- relative to weekly mean
 
 
-```{r reshape for weekday}
+
+```{r weekday mean adjusted}
+
+# start by getting daily counts
+all_ves_wkdy <- all_sites_hp |>
+  group_by(network, npz_id, Site_ID, Dep, Date_week, Weekday, Begin_Date_loc)|>
+  # get daily vessel countsper weekday: total, inside, inside_small, maneuver, maneuver_small
+  summarise(Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
+            Total_inside = sum(total_inside, na.rm = TRUE),
+            Total_inside_small = sum(total_inside_small, na.rm = TRUE),
+            Inside_maneuver = sum(man_inside, na.rm = TRUE),
+            Inside_maneuver_small = sum(man_inside_small, na.rm = TRUE)) |>
+  mutate(Inside_transit = Total_inside - Inside_maneuver,
+         Inside_transit_small = Total_inside_small - Inside_maneuver_small, 
+         Weekday = factor(Weekday, levels=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")),
+         network = case_when(Site_ID == "CG" | Site_ID == "EP" | Site_ID == "WP" ~ "Temperate East",
+                             Site_ID == "DNE" | Site_ID == "DSW" | Site_ID == "NGN"| Site_ID == "NGS" ~ "Northwest", TRUE ~ "South-west"
+         ),
+         network = factor(network, levels = c("Temperate East","Northwest","South-west"))) 
+levels(all_ves_wkdy$Weekday) <- c("M","T","W","R","F","Sa","Su")
+
+
+# summarize daily totals to get mean-adjusted counts per weekday
+wkly_means <- all_ves_wkdy |>
+  group_by(network, npz_id, Site_ID, Dep, Date_week) |>
+  summarize(n_days = n(),
+            mean_wk_tot = mean(Total_ves_dep, na.rm = TRUE),
+            mean_wk_ins = mean(Total_inside, na.rm = TRUE),
+            mean_wk_ins_sm = mean(Total_inside_small, na.rm = TRUE),
+            mean_wk_trans = mean(Inside_transit, na.rm = TRUE),
+            mean_wk_trans_sm = mean(Inside_transit_small, na.rm = TRUE),
+            mean_wk_man = mean(Inside_maneuver, na.rm = TRUE), 
+            mean_wk_man_sm = mean(Inside_maneuver_small, na.rm = TRUE))
+            
+  
+wkdy_mean_adj <- all_ves_wkdy |>
+  left_join(wkly_means, by = c("Date_week", "Dep")) |>
+  filter(n_days == 7) |>
+  mutate(tot_wkdy_adj = Total_ves_dep - mean_wk_tot)
+
+ggplot(data = wkdy_mean_adj |> filter(network.x == "South-west"),
+       aes(x = Weekday, y = tot_wkdy_adj)) +
+  geom_boxplot(aes(fill = network.x)) +
+  facet_grid(rows = vars(npz_id.x))
+```
+
+```{r prop across weekdays}
 
 # from full hp dataset
 # group down to date level to get daily vessel counts for each category (total, inside, inside_small, transit, maneuver)
@@ -436,7 +488,7 @@ Of days with vessels present, what proportion occurred on each weekday?
 
 all_ves_wkdy <- all_sites_hp |>
   group_by(network, npz_id, Site_ID, Dep, Weekday)|>
-  # get daily vessel counts: total, inside, inside_small, maneuver, maneuver_small
+  # get daily vessel countsper weekday: total, inside, inside_small, maneuver, maneuver_small
   summarise(Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
             Total_inside = sum(total_inside, na.rm = TRUE),
             Total_inside_small = sum(total_inside_small, na.rm = TRUE),
@@ -493,9 +545,19 @@ wkdy_prop_long <- wkdy_prop_table |>
 # TO DO:
 # - calculate A-C confidence intervals for each proportion
 # - add CI's to plot
+```
 
 
 
+
+## Proportional hours present
+
+For days with presence AND 24 total hours (i.e., full days only)
+- Calculate proportion of hours present (n/24)
+- Summarize by weekday (median, 25th - 75th percentiles)
+
+
+```{r weekday prophrs}
 #### Proportional by hours present rather than counts ####
 
 # start with full hp dataset
@@ -504,7 +566,9 @@ all_perc_weekday <- all_sites_hp |>
   group_by(network, npz_id, Site_ID, Dep, Date_noyr, Begin_Date_loc, Weekday, ves_yn) |>
   # get total number of hours for Y and N groups per each hour per deployment
   summarize(n_hours = n())|>
+  # only keep full days
   filter(sum(n_hours) == 24) |>
+  # calculate proportion hours present per day
   mutate(freq = n_hours/sum(n_hours)) |>
   # ungroup to fill in any missing values for columns
   ungroup() |>
@@ -526,9 +590,12 @@ levels(all_perc_weekday$Weekday) <- c("M","T","W","R","F","Sa","Su")
 
 # summarize proportion hours present
 
+# by deployment
 perc_wkdy_summ_dep <- all_perc_weekday |>
+  # only interested in proportion present
   filter(ves_yn == "Y") |>
   ungroup()|>
+  # group down to weekday level to summarize
   group_by(network, npz_id, Site_ID, Dep, Weekday)|>
   summarise(median_prop = median(Perc_per_hour),
             qt25 = quantile(Perc_per_hour, probs = 0.25),
@@ -536,6 +603,7 @@ perc_wkdy_summ_dep <- all_perc_weekday |>
             min_perc = min(Perc_per_hour, na.rm = TRUE),
             max_perc = max(Perc_per_hour, na.rm = TRUE))
 
+# by npz
 perc_wkdy_summ_npz <- all_perc_weekday |>
   filter(ves_yn == "Y") |>
   ungroup()|>
@@ -554,20 +622,8 @@ Daily proportion of hours present, summarized by weekday
 When those are summarized by Weekday, what's the median value for each weekday at each NPZ?"
 
 ```{r weekday proportion hours}
-# 
-# wkdy_prop_hr <- all_sites_hp |>
-#   group_by() |>
-#   mutate() |>
-  
-
 
 ## Try individual npz's for a single network
-## need to torubleshoot how these props are counted... might not be doing what I think it is
-# looks like one value per deployment per weekday, but ideally would be boxplots of daily
-# proportions summarized by weekday? i.e., should have a separate point for each time a weekday occurred
-# e.g., if deployment was 4 weeks, Thursday might be {0.15, 0.11, 0.23, 0.20} vs. Monday = {0.01, 0.02, 0.01, 0.03}
-# might need to do ves_yn by date, then summarize/group by weekday or something
-
 
 ## Temperate East
 ggplot(data = all_perc_weekday |>
@@ -576,8 +632,8 @@ ggplot(data = all_perc_weekday |>
                 network == "Temperate East"),
        aes(x = Weekday,
            y = Perc_per_hour,
-           fill = Dep,
-           color = Dep))+
+           fill = npz_id,
+           color = npz_id))+
   geom_boxplot(
     position = position_dodge2(preserve = "single"),
     alpha = 0.75,
@@ -588,7 +644,7 @@ ggplot(data = all_perc_weekday |>
   scale_color_viridis_d(end = 0.75,
                         direction = -1,
                         guide = "none")+
-  facet_grid(rows = vars(npz_id),
+  facet_grid(rows = vars(Dep),
              drop = TRUE) +
   labs(x = "Weekday",
        y = "Proportion hours per weekday",
@@ -670,6 +726,44 @@ ggplot(data = all_perc_weekday |>
 # 
 ggsave(paste0("figs/", "Weekday_prop_hrs_npz_southwest.png"), width=6, height=10,
        units="in", dpi=300)
+
+
+# no facets, plotting at network level
+
+ggplot(data = all_perc_weekday |>
+         filter(ves_yn == "Y",
+                Perc_per_hour > 0, 
+                !is.na(npz_id)),
+       aes(x = Weekday,
+           y = Perc_per_hour,
+           fill = network,
+           color = network))+
+  geom_boxplot(
+    position = position_dodge2(preserve = "single"),
+    alpha = 0.75,
+    width = 0.5)+
+  scale_fill_viridis_d(end = 0.75,
+                       direction = -1
+  )+
+  scale_color_viridis_d(end = 0.75,
+                        direction = -1,
+                        guide = "none")+
+  # facet_grid(rows = vars(npz_id),
+  #            drop = TRUE) +
+  labs(x = "Weekday",
+       y = "Hours present / hours per day",
+       fill = "Network") +
+  theme(
+    strip.text.y = element_text(face = "bold"),
+    axis.text.y = element_text(face = "bold"),
+    axis.text.x = element_text(face = "bold")
+  )
+ggsave(paste0("figs/", "Weekday_prop_hrs_nofacets.png"), width=6, height=10,
+       units="in", dpi=300)
+
+
+
+
 
 ```
 
