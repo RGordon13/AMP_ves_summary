@@ -67,7 +67,7 @@ all_sites_hp <- all_sites_hp |>
     # re-create dates as all in the same year for plotting on single graph
     Date_noyr = as_date(paste0("2000", "-", Month, "-", Day_month), format = "%Y-%m-%d"),
     # get start date for each week
-    Date_week = as_date(paste(Week,"1",sep = "-"), format = "%U-%u"),
+    Date_week = as_date(paste(as.character(year(Begin_Date_loc)),Week,"1",sep = "-"), format = "%Y-%W-%w"),
     
     # add season based on month
     season = case_when(month(Date_noyr) == 12 | month(Date_noyr) == 1 | month(Date_noyr) == 2 ~ "Summer",
