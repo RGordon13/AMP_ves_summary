@@ -453,6 +453,35 @@ all_ves_wkdy <- all_sites_hp |>
 levels(all_ves_wkdy$Weekday) <- c("M","T","W","R","F","Sa","Su")
 
 
+### Compare CGMP deployments
+cgmp_wkdy <- all_ves_wkdy |>
+  filter(Site_ID == "CG") |>
+  group_by(Dep, Weekday) |>
+  summarise(Total_ves_dep = sum(Total_ves_dep)) |>
+  pivot_wider(names_from = Dep, values_from = Total_ves_dep)
+
+### Compare SIMP deployments
+simp_wkdy <- all_ves_wkdy |>
+  filter(npz_id == "SIMP")|>
+  group_by(Dep, Weekday) |>
+  summarise(Total_ves_dep = sum(Total_ves_dep)) |>
+  pivot_wider(names_from = Dep, values_from = Total_ves_dep)
+
+# Chi squared tests
+# EP vs. WP in same deployment --> can we pool them?
+
+chisq.test(as.data.frame(simp_wkdy[,2:3], row.names = FALSE)) # NS
+chisq.test(as.data.frame(simp_wkdy[,4:5], row.names = FALSE)) # NS
+chisq.test(as.data.frame(simp_wkdy[,6:7], row.names = FALSE)) # sig (but NS for same dates)
+
+# test if WP subset to same dates is different
+simp_epwp_dates <- all_ves_wkdy |>
+  filter(npz_id == "SIMP", 
+         Begin_Date_loc > "2019-06-10" & Begin_Date_loc < "2019-06-30") |>
+  group_by(Dep, Weekday) |>
+  summarise(Total_ves_dep = sum(Total_ves_dep)) |>
+  pivot_wider(names_from = Dep, values_from = Total_ves_dep)
+
 # summarize daily totals to get mean-adjusted counts per weekday
 wkly_means <- all_ves_wkdy |>
   group_by(network, npz_id, Site_ID, Dep, Date_week) |>
@@ -895,7 +924,7 @@ ggplot(data = diel_mean_npz,
                       color = ifelse(mean_diel < 0, 'firebrick','blue')),
                   size = 0.25,
                   show.legend = FALSE) +
-  scale_color_viridis_d(begin = 0.1, end = 0.9, 
+  scale_color_viridis_d(begin = 0.3, end = 0.7, 
                         option = "H",
                         direction = -1)+
   labs(y = "Mean-adjusted average N vessels / hour",
@@ -923,6 +952,8 @@ write_csv(all_ves_by_npz,
           file = "output/All_ves_by_npz.csv")
 write_csv(all_ves_wkdy, 
           file = "output/All_ves_by_weekday.csv")
+write_csv(cgmp_wkdy,
+          file = "output/CGMP_by_weekday.csv")
 
 write_csv(all_perc_weekday, 
           file = "output/All_ves_prophr_weekday.csv")
