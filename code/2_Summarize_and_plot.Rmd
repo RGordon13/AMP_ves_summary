@@ -148,7 +148,7 @@ ins_out_counts <- all_sites_inout |>
 
 # summarize full df to get counts per deployment
 all_ves_by_site <- all_sites_hp |>
-  group_by(network, npz_id, Site_ID, Dep) |>
+  group_by(network, npz_id, Site_ID, Dep_ID, Dep) |>
   summarise(n_days = n_distinct(Begin_Date_loc),
             Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
             Total_inside = sum(total_inside, na.rm = TRUE),
@@ -168,7 +168,7 @@ all_ves_by_site <- all_sites_hp |>
 
 
 all_ves_by_npz <- all_sites_hp |>
-  group_by(network, npz_id, Site_ID, Dep) |>
+  group_by(network, npz_id, Site_ID, Dep_ID, Dep) |>
   left_join(ins_out_counts, by = "Dep") |>
   ungroup() |>
   group_by(network, npz_id) |>
@@ -196,7 +196,7 @@ all_ves_by_npz <- all_sites_hp |>
 
 
 all_ves_long <- all_ves_by_site |>
-  pivot_longer(cols = -c(network, npz_id, Site_ID, Dep, n_days), values_to = "Ves_counts", names_to = "Ves_behav") |>
+  pivot_longer(cols = -c(network, npz_id, Site_ID, Dep_ID, Dep, n_days), values_to = "Ves_counts", names_to = "Ves_behav") |>
   # relevel categorical values for plotting
   mutate(Ves_behav = fct(Ves_behav),
          Ves_behav = fct_relevel(Ves_behav, c("Total_ves_dep","Total_inside_small", "Total_inside", "Inside_transit_small","Inside_maneuver_small", "Inside_transit","Inside_maneuver")),
@@ -343,7 +343,7 @@ ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=6,
 
 ### Diverging bar plot by Deployment
 
-```{r div bar by dep}
+```{r div bar by npz}
 
 ####
 # Diverging bar plot - NPZ
@@ -355,12 +355,12 @@ ggplot(data = all_ves_long |>
          filter(Ves_behav == "total_outside" |
                Ves_behav == "Total_inside",
                npz_id != "SWCMP"),
-       aes(x = Dep,
+       aes(x = npz_id,
            y = ves_counts_diverge,
            fill = Ves_behav)) +
   geom_col(position = position_stack(reverse = TRUE)) +
   coord_flip()+
-  scale_y_continuous(limits = c(-400, 400),
+  scale_y_continuous(limits = c(-200, 800),
                      breaks = breakvals, 
                      labels = abs(breakvals))+
   scale_fill_viridis_d(direction = -1)+
@@ -368,7 +368,7 @@ ggplot(data = all_ves_long |>
        y = "N vessels",
        fill = "Inside vs. Outside",
        title = "Inside-Outside Totals") +
-  facet_grid(vars(npz_id),
+  facet_grid(vars(network),
              scales = "free",
              space = "free",
              drop = TRUE)+
@@ -377,7 +377,7 @@ ggplot(data = all_ves_long |>
     strip.text.y = element_text(face = "bold")
     )
 
-ggsave(paste0("figs/", "Ins_out_counts_dep.png"), width=10, height=8,
+ggsave(paste0("figs/", "Ins_out_counts_npz.png"), width=10, height=8,
        units="in", dpi=300)
 
 # Small vessels inside-outside
@@ -388,12 +388,12 @@ ggplot(data = all_ves_long |>
          filter(Ves_behav == "total_out_small" |
                Ves_behav == "Total_inside_small",
                npz_id != "SWCMP"),
-       aes(x = Dep,
+       aes(x = npz_id,
            y = ves_counts_diverge,
            fill = Ves_behav)) +
   geom_col(position = position_stack(reverse = TRUE)) +
   coord_flip()+
-  scale_y_continuous(limits = c(-400, 400),
+  scale_y_continuous(limits = c(-600, 600),
                      breaks = breakvals_small, 
                      labels = abs(breakvals_small))+
   scale_fill_viridis_d(direction = -1)+
@@ -401,7 +401,7 @@ ggplot(data = all_ves_long |>
        y = "N vessels",
        fill = "Inside vs. Outside",
        title = "Inside-Outside Counts (Small Vessels)") +
-   facet_grid(rows = vars(npz_id),
+   facet_grid(rows = vars(network),
              scales = "free",
              space = "free",
              drop = TRUE)+
@@ -410,7 +410,7 @@ ggplot(data = all_ves_long |>
     strip.text.y = element_text(face = "bold")
     )
 
-ggsave(paste0("figs/", "Ins_out_counts_small_dep.png"), width=10, height=8,
+ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=8,
        units="in", dpi=300)
 
 
@@ -505,6 +505,11 @@ ggplot(data = wkdy_mean_adj |> filter(network.x == "South-west"),
   geom_boxplot(aes(fill = network.x)) +
   facet_grid(rows = vars(npz_id.x))
 ```
+
+
+## Daily proportional hours present
+
+Summarize by weekday
 
 ```{r prop across weekdays}
 
@@ -879,7 +884,6 @@ all_ves_diel <- all_sites_hp |>
                              Site_ID == "DNE" | Site_ID == "DSW" | Site_ID == "NGN"| Site_ID == "NGS" ~ "Northwest", TRUE ~ "South-west"
          ),
          network = factor(network, levels = c("Temperate East","Northwest","South-west"))) 
-levels(all_ves_wkdy$Weekday) <- c("M","T","W","R","F","Sa","Su")
 
 
 # summarize daily totals to get mean-adjusted counts per weekday
@@ -899,19 +903,35 @@ diel_mean_adj <- all_ves_diel |>
   left_join(daily_means, by = c("Begin_Date_loc", "Dep"), keep = FALSE) |>
   group_by(network.x, npz_id.x, Site_ID.x, Dep, Begin_Hour_loc) |>
   filter(n_hrs == 24) |>
-  mutate(tot_diel_adj = Total_ves_dep - mean_tot) |>
-  summarise(mean_diel = mean(tot_diel_adj, na.rm = TRUE)) |>
+  mutate(tot_diel_adj = Total_ves_dep - mean_tot,
+         ins_diel_adj = Total_inside - mean_ins,
+         ins_sm_adj = Total_inside_small - mean_ins_sm) |>
+  summarise(mean_diel = mean(tot_diel_adj, na.rm = TRUE),
+            mean_diel_ins = mean(ins_diel_adj, na.rm = TRUE),
+            mean_diel_ins_sm = mean(ins_sm_adj, na.rm = TRUE)) |>
   mutate(sd_lower = mean_diel - 0.5*(sd(mean_diel)),
-         sd_upper = mean_diel + 0.5*(sd(mean_diel)))
+         sd_upper = mean_diel + 0.5*(sd(mean_diel)),
+         sd_lower_ins = mean_diel_ins - 0.5*(sd(mean_diel_ins)),
+         sd_upper_ins = mean_diel_ins + 0.5*(sd(mean_diel_ins)),
+         sd_lower_ins_sm = mean_diel_ins - 0.5*(sd(mean_diel_ins)),
+         sd_upper_ins_sm = mean_diel_ins_sm + 0.5*(sd(mean_diel_ins_sm)))
 
 
 diel_mean_npz <- all_ves_diel |>
   left_join(daily_means, by = c("Begin_Date_loc", "Dep"), keep = FALSE) |>
   group_by(network.x, npz_id.x, Begin_Hour_loc) |>
-  mutate(tot_diel_adj = Total_ves_dep - mean_tot) |>
-  summarise(mean_diel = mean(tot_diel_adj, na.rm = TRUE)) |>
+  mutate(tot_diel_adj = Total_ves_dep - mean_tot,
+         ins_diel_adj = Total_inside - mean_ins,
+         ins_sm_adj = Total_inside_small - mean_ins_sm) |>
+  summarise(mean_diel = mean(tot_diel_adj, na.rm = TRUE),
+            mean_diel_ins = mean(ins_diel_adj, na.rm = TRUE),
+            mean_diel_ins_sm = mean(ins_sm_adj, na.rm = TRUE)) |>
   mutate(sd_lower = mean_diel - 0.5*(sd(mean_diel)),
-         sd_upper = mean_diel + 0.5*(sd(mean_diel)))
+         sd_upper = mean_diel + 0.5*(sd(mean_diel)),
+         sd_lower_ins = mean_diel_ins - 0.5*(sd(mean_diel_ins)),
+         sd_upper_ins = mean_diel_ins + 0.5*(sd(mean_diel_ins)),
+         sd_lower_ins_sm = mean_diel_ins - 0.5*(sd(mean_diel_ins)),
+         sd_upper_ins_sm = mean_diel_ins_sm + 0.5*(sd(mean_diel_ins_sm)))
    
    
 ggplot(data = diel_mean_npz,
@@ -937,6 +957,39 @@ ggplot(data = diel_mean_npz,
 
 ggsave(paste0("figs/", "Diel_mean_adj_npz.png"), width=8, height=10, units="in", dpi=300)
 
+
+# Inside small vessels
+
+ggplot(data = diel_mean_npz |> filter(npz_id.x != "SWCMP"),
+       aes(x = factor(Begin_Hour_loc), 
+           y = mean_diel_ins_sm)) +
+  geom_hline(yintercept = 0, colour = "grey50") +
+  geom_pointrange(aes(ymin = sd_lower_ins_sm,
+                      ymax = sd_upper_ins_sm,
+                      group = npz_id.x,
+                      color = ifelse(mean_diel_ins_sm < 0, 'firebrick','blue')),
+                  size = 0.25,
+                  show.legend = FALSE) +
+  scale_color_viridis_d(begin = 0.3, end = 0.7, 
+                        option = "H",
+                        direction = -1)+
+  labs(y = "Mean-adjusted average N vessels / hour",
+       x = "Hour of Day (Local TZ)")+
+  facet_grid(rows = vars(npz_id.x)) +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.text.y = element_text(face = "bold")
+    )
+
+ggsave(paste0("figs/", "Diel_mean_adj_npz_ins_sm.png"), width=8, height=10, units="in", dpi=300)
+
+
+
+
+
+
+
+
 ```
 
 
@@ -961,5 +1014,9 @@ write_csv(perc_wkdy_summ_npz,
           file = "output/All_ves_prophr_weekday_npz.csv")
 write_csv(perc_wkdy_summ_dep, 
           file = "output/All_ves_prophr_weekday_dep.csv")
+write_csv(all_ves_diel, 
+          file = "output/All_ves_diel_counts.csv")
+write_csv(diel_mean_adj, 
+          file = "output/All_ves_diel_mean_adj.csv")
 
 ```
