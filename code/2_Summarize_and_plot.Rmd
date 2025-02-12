@@ -8,8 +8,9 @@ output:
 ---
 
 ## Load libraries
-# test
-```{r load libraries and helper script, include=FALSE, echo=FALSE}
+
+
+```{r load libraries and helper script, include=FALSE, message=FALSE, warning=FALSE, echo=FALSE}
 
 #### Load libraries ####
 
@@ -32,7 +33,7 @@ source("code/AMP_summary_ves_funs.R")
 
 ## Load hourly presence datasets
 
-```{r Load data}
+```{r Load data, include=FALSE}
 
 #### Load compiled hourly presence table ####
 # This is generated using Reformat_data_for_HP script
@@ -44,7 +45,7 @@ all_sites_inout <- read_csv("data/All_sites_tables/total_ves_ins_out_by_site.csv
 
 ## Reshape data for plotting
 
-```{r reshape tables}
+```{r reshape tables, include = FALSE}
 
 #### Add columns to original dataset to help group for plotting ####
 
@@ -108,12 +109,10 @@ all_sites_hp <- all_sites_hp |>
 ## Data gaps
 
 Add in dates without coverage 
-(this is still in progress)
+**(this is still in progress)**
 
-```{r data gaps}
+```{r data gaps, include=FALSE}
 
-
-## Still need to troubleshoot this!!!
 
 # load in deployment info CSV
 
@@ -138,7 +137,7 @@ Add in dates without coverage
 Raw total counts per deployments and vessels inside the NPZs
 Deployment-level and NPZ-level info
 
-```{r total presence}
+```{r total presence, message=FALSE, warning=FALSE}
 
 # summarize in-out data to get n vessels used for I-O analysis per deployment
 ins_out_counts <- all_sites_inout |>
@@ -422,7 +421,7 @@ ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=8,
 
 ## Temporal patterns
 
-# Weekday patterns
+### Weekday patterns
 
 Calculate mean-adjusted totals per weekday, similar to Moussoline et al. 2012 diel presence
 
@@ -431,13 +430,14 @@ Calculate mean-adjusted totals per weekday, similar to Moussoline et al. 2012 di
 - values will be +/- relative to weekly mean
 
 
+First, get daily totals grouped by weekday for each vessel category
 
 ```{r weekday mean adjusted}
 
 # start by getting daily counts
 all_ves_wkdy <- all_sites_hp |>
   group_by(network, npz_id, Site_ID, Dep, Date_week, Weekday, Begin_Date_loc)|>
-  # get daily vessel countsper weekday: total, inside, inside_small, maneuver, maneuver_small
+  # get daily vessel counts per weekday: total, inside, inside_small, maneuver, maneuver_small
   summarise(Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
             Total_inside = sum(total_inside, na.rm = TRUE),
             Total_inside_small = sum(total_inside_small, na.rm = TRUE),
@@ -447,12 +447,73 @@ all_ves_wkdy <- all_sites_hp |>
          Inside_transit_small = Total_inside_small - Inside_maneuver_small, 
          Weekday = factor(Weekday, levels=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")),
          network = case_when(Site_ID == "CG" | Site_ID == "EP" | Site_ID == "WP" ~ "Temperate East",
-                             Site_ID == "DNE" | Site_ID == "DSW" | Site_ID == "NGN"| Site_ID == "NGS" ~ "Northwest", TRUE ~ "South-west"
+                             Site_ID == "DNE" | Site_ID == "DSW" | Site_ID == "NGN"| Site_ID == "NGS" ~ "Northwest", 
+                             TRUE ~ "South-west"
          ),
          network = factor(network, levels = c("Temperate East","Northwest","South-west"))) 
 levels(all_ves_wkdy$Weekday) <- c("M","T","W","R","F","Sa","Su")
 
 
+# Calculate mean daily presence for each week per category
+wkly_means <- all_ves_wkdy |>
+  group_by(network, npz_id, Site_ID, Dep, Date_week) |>
+  summarize(n_days = n(),
+            mean_tot = mean(Total_ves_dep, na.rm = TRUE),
+            mean_ins = mean(Total_inside, na.rm = TRUE),
+            mean_ins_sm = mean(Total_inside_small, na.rm = TRUE),
+            mean_trans = mean(Inside_transit, na.rm = TRUE),
+            mean_trans_sm = mean(Inside_transit_small, na.rm = TRUE),
+            mean_man = mean(Inside_maneuver, na.rm = TRUE), 
+            mean_man_sm = mean(Inside_maneuver_small, na.rm = TRUE))
+            
+# join weekly means to full weekday dataset
+wkdy_mean_adj <- all_ves_wkdy |>
+  left_join(wkly_means, by = c("Date_week", "Dep")) |>
+  group_by(network.x, npz_id.x, Weekday) |>
+  # only keep full weeks (7 days)
+  filter(n_days == 7) |>
+  # mean-adjusted value = count per weekday - weekly mean
+  mutate(tot_wk_adj = Total_ves_dep - mean_tot,
+         ins_wk_adj = Total_inside - mean_ins,
+         ins_sm_adj = Total_inside_small - mean_ins_sm) |>
+  summarise(mean_wk = mean(tot_wk_adj, na.rm = TRUE),
+            mean_wk_ins = mean(ins_wk_adj, na.rm = TRUE),
+            mean_wk_ins_sm = mean(ins_sm_adj, na.rm = TRUE)) |>
+  mutate(sd_lower = mean_wk - 0.5*(sd(mean_wk)),
+         sd_upper = mean_wk + 0.5*(sd(mean_wk)),
+         sd_lower_ins = mean_wk_ins - 0.5*(sd(mean_wk_ins)),
+         sd_upper_ins = mean_wk_ins + 0.5*(sd(mean_wk_ins)),
+         sd_lower_ins_sm = mean_wk_ins - 0.5*(sd(mean_wk_ins)),
+         sd_upper_ins_sm = mean_wk_ins_sm + 0.5*(sd(mean_wk_ins_sm)),
+         npz_id.x = fct(npz_id.x),
+         npz_id.x = fct_relevel(npz_id.x, c("CGMP","SIMP","DMP","NMP")))
+
+ggplot(data = wkdy_mean_adj,
+       aes(x = Weekday, y = mean_wk)) +
+  geom_pointrange(aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id.x,
+                      color = ifelse(sd_lower <= 0, 'firebrick','blue')),
+                  size = 0.25,
+                  show.legend = FALSE) +
+  geom_hline(yintercept = 0, colour = "black") +
+  scale_color_manual(values = c("red","black"))+
+  labs(y = "Mean-adjusted average N vessels / Weekday",
+       x = "Weekday")+
+  facet_grid(rows = vars(npz_id.x)) +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.text.y = element_text(face = "bold")
+    )
+
+ggsave(paste0("figs/", "Weekday_mean_adj_npz.png"), width=8, height=10, units="in", dpi=300)
+
+```
+
+
+
+
+```{r pooling SIMP sites}
 ### Compare CGMP deployments
 cgmp_wkdy <- all_ves_wkdy |>
   filter(Site_ID == "CG") |>
@@ -482,28 +543,7 @@ simp_epwp_dates <- all_ves_wkdy |>
   summarise(Total_ves_dep = sum(Total_ves_dep)) |>
   pivot_wider(names_from = Dep, values_from = Total_ves_dep)
 
-# summarize daily totals to get mean-adjusted counts per weekday
-wkly_means <- all_ves_wkdy |>
-  group_by(network, npz_id, Site_ID, Dep, Date_week) |>
-  summarize(n_days = n(),
-            mean_wk_tot = mean(Total_ves_dep, na.rm = TRUE),
-            mean_wk_ins = mean(Total_inside, na.rm = TRUE),
-            mean_wk_ins_sm = mean(Total_inside_small, na.rm = TRUE),
-            mean_wk_trans = mean(Inside_transit, na.rm = TRUE),
-            mean_wk_trans_sm = mean(Inside_transit_small, na.rm = TRUE),
-            mean_wk_man = mean(Inside_maneuver, na.rm = TRUE), 
-            mean_wk_man_sm = mean(Inside_maneuver_small, na.rm = TRUE))
-            
-  
-wkdy_mean_adj <- all_ves_wkdy |>
-  left_join(wkly_means, by = c("Date_week", "Dep")) |>
-  filter(n_days == 7) |>
-  mutate(tot_wkdy_adj = Total_ves_dep - mean_wk_tot)
 
-ggplot(data = wkdy_mean_adj |> filter(network.x == "South-west"),
-       aes(x = Weekday, y = tot_wkdy_adj)) +
-  geom_boxplot(aes(fill = network.x)) +
-  facet_grid(rows = vars(npz_id.x))
 ```
 
 
@@ -865,7 +905,7 @@ ggsave(paste0("figs/", "Weekday_props_npz_inside.png"), width=8, height=10, unit
 ```
 
 
-## Try mean-adjusted diel presence
+## Daily mean-adjusted diel presence
 
 ```{r mean adj diel}
 # start by getting hourly counts
