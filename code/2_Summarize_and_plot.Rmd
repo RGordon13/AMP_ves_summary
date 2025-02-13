@@ -22,6 +22,7 @@ library(scales)
 library(ggalt)
 library(ggsci)
 library(ggdist)
+library(ggh4x) # nested faceting
 
 theme_set(theme_bw(
   base_size = 14
@@ -429,6 +430,8 @@ Calculate mean-adjusted totals per weekday, similar to Moussoline et al. 2012 di
 - For each weekday, calculate [daily total - weekly mean]
 - values will be +/- relative to weekly mean
 
+For weeks with vessel presence, the mean-adjusted weekday counts were highest in ___ NPZ on __day. Multiple NPZs showed higher presence on __days overall. 
+
 
 First, get daily totals grouped by weekday for each vessel category
 
@@ -470,8 +473,9 @@ wkly_means <- all_ves_wkdy |>
 wkdy_mean_adj <- all_ves_wkdy |>
   left_join(wkly_means, by = c("Date_week", "Dep")) |>
   group_by(network.x, npz_id.x, Weekday) |>
-  # only keep full weeks (7 days)
-  filter(n_days == 7) |>
+  # only keep full weeks (7 days) and weeks with any vessels present
+  filter(n_days == 7, 
+         mean_tot > 0) |>
   # mean-adjusted value = count per weekday - weekly mean
   mutate(tot_wk_adj = Total_ves_dep - mean_tot,
          ins_wk_adj = Total_inside - mean_ins,
@@ -496,17 +500,22 @@ ggplot(data = wkdy_mean_adj,
                       color = ifelse(sd_lower <= 0, 'firebrick','blue')),
                   size = 0.25,
                   show.legend = FALSE) +
-  geom_hline(yintercept = 0, colour = "black") +
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
   scale_color_manual(values = c("red","black"))+
-  labs(y = "Mean-adjusted average N vessels / Weekday",
+  labs(y = "Mean-adjusted average N vessels / weekday",
        x = "Weekday")+
-  facet_grid(rows = vars(npz_id.x)) +
+  facet_nested(rows = vars(network.x, npz_id.x), 
+               nest_line = element_line(),
+               scales = "free_y") +
   theme(
     axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
     strip.text.y = element_text(face = "bold")
     )
 
-ggsave(paste0("figs/", "Weekday_mean_adj_npz.png"), width=8, height=10, units="in", dpi=300)
+ggsave(paste0("figs/", "Weekday_mean_adj_npz_presentonly.png"), width=8, height=10, units="in", dpi=300)
 
 ```
 
