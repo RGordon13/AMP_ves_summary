@@ -951,7 +951,9 @@ daily_means <- all_ves_diel |>
 diel_mean_adj <- all_ves_diel |>
   left_join(daily_means, by = c("Begin_Date_loc", "Dep"), keep = FALSE) |>
   group_by(network.x, npz_id.x, Site_ID.x, Dep, Begin_Hour_loc) |>
-  filter(n_hrs == 24) |>
+  filter(n_hrs == 24, # only keep full days
+         # only keep days with presence for mean-adjusting
+         mean_tot > 0) |>
   mutate(tot_diel_adj = Total_ves_dep - mean_tot,
          ins_diel_adj = Total_inside - mean_ins,
          ins_sm_adj = Total_inside_small - mean_ins_sm) |>
@@ -990,21 +992,25 @@ ggplot(data = diel_mean_npz,
   geom_pointrange(aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id.x,
-                      color = ifelse(mean_diel < 0, 'firebrick','blue')),
+                      color = ifelse(sd_lower <= 0, 'firebrick','blue')),
                   size = 0.25,
                   show.legend = FALSE) +
-  scale_color_viridis_d(begin = 0.3, end = 0.7, 
-                        option = "H",
-                        direction = -1)+
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  scale_color_manual(values = c("red","black"))+
   labs(y = "Mean-adjusted average N vessels / hour",
        x = "Hour of Day (Local TZ)")+
-  facet_grid(rows = vars(npz_id.x)) +
+   facet_nested(rows = vars(network.x, npz_id.x), 
+               nest_line = element_line(),
+               scales = "free_y") +
   theme(
     axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
     strip.text.y = element_text(face = "bold")
     )
 
-ggsave(paste0("figs/", "Diel_mean_adj_npz.png"), width=8, height=10, units="in", dpi=300)
+ggsave(paste0("figs/", "Diel_mean_adj_npz_presonly.png"), width=8, height=10, units="in", dpi=300)
 
 
 # Inside small vessels
