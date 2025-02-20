@@ -7,9 +7,6 @@ output:
   pdf_document: default
 ---
 
-## Load libraries
-
-
 ```{r load libraries and helper script, include=FALSE, message=FALSE, warning=FALSE, echo=FALSE}
 
 #### Load libraries ####
@@ -269,9 +266,17 @@ ggplot(data = all_ves_long |>
     strip.text.x = element_text(face = "bold")
     )
 
+```
+
+
+### Diverging bar plot by NPZ
+
+```{r div bar by npz}
+
 ####
 # Diverging bar plot - NPZ
 #### 
+
 
 breakvals <- seq(-200, 800, 200)
 
@@ -338,81 +343,24 @@ ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=6,
        units="in", dpi=300)
 
 
-```
+# make table of inside vs. outside
+ins_out_table <- all_ves_long |> 
+  filter(Ves_behav == "total_outside" |
+           Ves_behav == "Total_inside"| 
+           Ves_behav == "total_out_small" |
+           Ves_behav == "Total_inside_small",
+         npz_id != "SWCMP") |>
+  pivot_wider(names_from = Ves_behav, 
+              id_cols = Dep, 
+              values_from = Ves_counts) |>
+  relocate(total_outside, .after = Total_inside) |>
+  rename("Total inside" = "Total_inside",
+         "Total inside (small)" = "Total_inside_small",
+         "Total outside" = "total_outside",
+         "Total outside (small)" = "total_out_small",
+         "Deployment" = "Dep")
 
-
-### Diverging bar plot by Deployment
-
-```{r div bar by npz}
-
-####
-# Diverging bar plot - NPZ
-#### 
-
-breakvals <- seq(-400, 800, 50)
-
-ggplot(data = all_ves_long |> 
-         filter(Ves_behav == "total_outside" |
-               Ves_behav == "Total_inside",
-               npz_id != "SWCMP"),
-       aes(x = npz_id,
-           y = ves_counts_diverge,
-           fill = Ves_behav)) +
-  geom_col(position = position_stack(reverse = TRUE)) +
-  coord_flip()+
-  scale_y_continuous(limits = c(-200, 800),
-                     breaks = breakvals, 
-                     labels = abs(breakvals))+
-  scale_fill_viridis_d(direction = -1)+
-  labs(x = "NPZ",
-       y = "N vessels",
-       fill = "Inside vs. Outside",
-       title = "Inside-Outside Totals") +
-  facet_grid(vars(network),
-             scales = "free",
-             space = "free",
-             drop = TRUE)+
-  theme(
-    # axis.text.x = element_text(angle = 90),
-    strip.text.y = element_text(face = "bold")
-    )
-
-ggsave(paste0("figs/", "Ins_out_counts_npz.png"), width=10, height=8,
-       units="in", dpi=300)
-
-# Small vessels inside-outside
-
-breakvals_small <- seq(-600, 600, 50)
-
-ggplot(data = all_ves_long |> 
-         filter(Ves_behav == "total_out_small" |
-               Ves_behav == "Total_inside_small",
-               npz_id != "SWCMP"),
-       aes(x = npz_id,
-           y = ves_counts_diverge,
-           fill = Ves_behav)) +
-  geom_col(position = position_stack(reverse = TRUE)) +
-  coord_flip()+
-  scale_y_continuous(limits = c(-600, 600),
-                     breaks = breakvals_small, 
-                     labels = abs(breakvals_small))+
-  scale_fill_viridis_d(direction = -1)+
-  labs(x = "NPZ",
-       y = "N vessels",
-       fill = "Inside vs. Outside",
-       title = "Inside-Outside Counts (Small Vessels)") +
-   facet_grid(rows = vars(network),
-             scales = "free",
-             space = "free",
-             drop = TRUE)+
-  theme(
-    # axis.text.x = element_text(angle = 90),
-    strip.text.y = element_text(face = "bold")
-    )
-
-ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=8,
-       units="in", dpi=300)
-
+knitr::kable(ins_out_table, caption = "Vessel counts inside and outside NPZ boundaries")
 
 
 
