@@ -233,22 +233,6 @@ all_ves_by_day <- all_sites_hp |>
 
 
 ```{r plots by deployment}
-
-# try ridge plots of daily counts per deployment?
-ggplot(data = all_ves_by_day |> filter(Total_ves_dep > 0), 
-       aes(x = Total_ves_dep, 
-           y = npz_id)) +
-  geom_density_ridges() +
-  facet_nested(rows = vars(network), 
-               nest_line = element_line(),
-               scales = "free_y", space = "free") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
-
-
 ggplot(data = all_ves_by_site,
        aes(x = Dep,
            y = Total_ves_dep,
