@@ -203,10 +203,52 @@ all_ves_long <- all_ves_by_site |>
   mutate(ves_counts_diverge = ifelse(Ves_behav == "Total_inside" | Ves_behav == "Total_inside_small",Ves_counts*(-1),Ves_counts),
          npz_id = fct(npz_id),
          npz_id = fct_relevel(npz_id, c("CGMP","SIMP","DMP","NMP")))
+
+
+
+all_ves_by_day <- all_sites_hp |>
+  group_by(network, npz_id, Site_ID, Dep_ID, Dep, Begin_Date_loc) |>
+  summarise(n_days = n_distinct(Begin_Date_loc),
+            Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
+            Total_inside = sum(total_inside, na.rm = TRUE),
+            Total_inside_small = sum(total_inside_small, na.rm = TRUE),
+            Inside_maneuver = sum(man_inside, na.rm = TRUE),
+            Inside_maneuver_small = sum(man_inside_small, na.rm = TRUE),
+            mean_per_day = Total_ves_dep/n_days,
+            mean_overall = mean(Total_Vessels)) |>
+  mutate(Inside_transit = Total_inside - Inside_maneuver,
+         Inside_transit_small = Total_inside_small - Inside_maneuver_small) |>
+  left_join(ins_out_counts, by = "Dep") |>
+  mutate(
+    prop_inside = Total_inside/n_ves_used_inout,
+    total_outside = n_ves_used_inout - Total_inside,
+    prop_inside_small = Total_inside_small/n_ves_used_inout,
+    total_out_small = n_ves_used_inout - Total_inside_small)
+
+
+
+
+
 ```
 
 
 ```{r plots by deployment}
+
+# try ridge plots of daily counts per deployment?
+ggplot(data = all_ves_by_day |> filter(Total_ves_dep > 0), 
+       aes(x = Total_ves_dep, 
+           y = npz_id)) +
+  geom_density_ridges() +
+  facet_nested(rows = vars(network), 
+               nest_line = element_line(),
+               scales = "free_y", space = "free") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+
+
 ggplot(data = all_ves_by_site,
        aes(x = Dep,
            y = Total_ves_dep,
