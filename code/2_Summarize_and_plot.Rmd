@@ -213,14 +213,12 @@ all_ves_by_day <- all_sites_hp |>
             Total_inside_small = sum(total_inside_small, na.rm = TRUE),
             Inside_maneuver = sum(man_inside, na.rm = TRUE),
             Inside_maneuver_small = sum(man_inside_small, na.rm = TRUE),
-            mean_per_day = Total_ves_dep/n_days,
-            mean_overall = mean(Total_Vessels)) |>
+            # daily means
+            mean_total_ves = mean(Total_Vessels),
+            mean_ins_ves = mean(total_inside),
+            mean_ins_sm_ves = mean(total_inside_small)) |>
   mutate(Inside_transit = Total_inside - Inside_maneuver,
-         Inside_transit_small = Total_inside_small - Inside_maneuver_small) |>
-  left_join(ins_out_counts, by = "Dep") |>
-  mutate(
-    total_outside = n_ves_used_inout - Total_inside,
-    total_out_small = n_ves_used_inout - Total_inside_small)
+         Inside_transit_small = Total_inside_small - Inside_maneuver_small)
 
 
 
@@ -228,17 +226,17 @@ all_ves_by_day <- all_sites_hp |>
 
 ```
 
-### Plots by deployment
+### Plots by NPZ
 
 Visualizing overall vessel presence
 
-```{r plots by deployment}
+```{r plots by npz}
 ggplot(data = all_ves_by_site,
-       aes(x = Dep,
+       aes(x = npz_id,
            y = Total_ves_dep,
            fill = npz_id)) +
   geom_col(show.legend = FALSE,
-           color = "black") +
+           position = position_identity()) +
   scale_fill_viridis_d()+
   facet_grid(~network, 
              scales = "free_x", 
@@ -247,50 +245,16 @@ ggplot(data = all_ves_by_site,
   labs(x = "NPZ",
        y = "N vessels",
        title = "Total vessel counts") +
+  facet_nested(cols = vars(network, npz_id, Dep_ID), 
+               nest_line = element_line(),
+               scales = "free_x") +
   theme(
-    axis.text.x = element_text(angle = 90),
-    strip.text.x = element_text(face = "bold")
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
     )
 
 
-# counts including inside-outside
-ggplot(data = all_ves_long,
-       aes(x = npz_id,
-           y = Ves_counts,
-           fill = Ves_behav)) +
-  geom_col(position = position_dodge()) +
-  scale_fill_viridis_d()+
-  # facet_grid(rows = vars(network), 
-  #            scales = "free_x", 
-  #            space = "free", 
-  #            drop = TRUE) +
-  labs(x = "NPZ",
-       y = "N vessels",
-       title = "Total vessel counts") +
-  theme(
-    axis.text.x = element_text(angle = 90),
-    strip.text.x = element_text(face = "bold")
-    )
-
-
-# inside vs outside proportion plot (fill to equal 1.0)
-ggplot(data = all_ves_long |> 
-         filter(Ves_behav == "total_outside" |
-               Ves_behav == "Total_inside",
-               npz_id != "SWCMP"),
-       aes(x = npz_id,
-           y = Ves_counts,
-           fill = Ves_behav)) +
-  geom_col(position = position_fill(reverse = TRUE)) +
-  scale_fill_viridis_d(direction = -1)+
-  labs(x = "NPZ",
-       y = "Proportion vessels",
-       fill = "Inside vs. Outside",
-       title = "Inside-Outside Proportions") +
-  theme(
-    # axis.text.x = element_text(angle = 90),
-    strip.text.x = element_text(face = "bold")
-    )
 
 ```
 
