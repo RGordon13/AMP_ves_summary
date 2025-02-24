@@ -285,20 +285,23 @@ ggplot(data = all_ves_long |>
                      breaks = breakvals, 
                      labels = abs(breakvals))+
   scale_fill_viridis_d(direction = -1)+
-  labs(x = "NPZ",
-       y = "N vessels",
+  labs(y = "N vessels",
        fill = "Inside vs. Outside",
        title = "Inside-Outside Totals") +
-  facet_grid(rows = vars(network),
-             scales = "free",
-             space = "free",
-             drop = TRUE)+
+  facet_nested(rows = vars(network, npz_id, Dep_ID), 
+               nest_line = element_line(),
+               scales = "free_y",
+               switch = "y") +
   theme(
-    # axis.text.x = element_text(angle = 90),
+    axis.text.x = element_text(face = "bold"),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    strip.background = element_blank(),
     strip.text.y = element_text(face = "bold")
     )
-
-ggsave(paste0("figs/", "Ins_out_counts_npz.png"), width=10, height=6,
+  
+ggsave(paste0("figs/", "Ins_out_counts_npz.png"), width=10, height=8,
        units="in", dpi=300)
 
 # Small vessels inside-outside
@@ -318,20 +321,23 @@ ggplot(data = all_ves_long |>
                      breaks = breakvals_small, 
                      labels = abs(breakvals_small))+
   scale_fill_viridis_d(direction = -1)+
-  labs(x = "NPZ",
-       y = "N vessels",
+  labs(y = "N vessels",
        fill = "Inside vs. Outside",
        title = "Inside-Outside Counts (Small Vessels)") +
-   facet_grid(rows = vars(network),
-             scales = "free",
-             space = "free",
-             drop = TRUE)+
+   facet_nested(rows = vars(network, npz_id, Dep_ID), 
+               nest_line = element_line(),
+               scales = "free_y",
+               switch = "y") +
   theme(
-    # axis.text.x = element_text(angle = 90),
+    axis.text.x = element_text(face = "bold"),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    strip.background = element_blank(),
     strip.text.y = element_text(face = "bold")
     )
 
-ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=6,
+ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=8,
        units="in", dpi=300)
 
 
