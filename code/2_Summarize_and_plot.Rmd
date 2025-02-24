@@ -379,8 +379,6 @@ Calculate mean-adjusted totals per weekday, similar to Moussoline et al. 2012 di
 For weeks with vessel presence, the mean-adjusted weekday counts were highest in ___ NPZ on __day. Multiple NPZs showed higher presence on __days overall. 
 
 
-#### All vessels 
-
 ```{r weekday mean adjusted}
 
 # start by getting daily counts
@@ -402,7 +400,7 @@ all_ves_wkdy <- all_sites_hp |>
 levels(all_ves_wkdy$Weekday) <- c("M","T","W","R","F","Sa","Su")
 
 
-# Calculate mean daily presence for each week per category
+# Weekly mean-adjusted counts for total vessels
 wkly_means_tot <- all_ves_wkdy |>
   # group to week level
   group_by(network, npz_id, Dep_ID, Dep, Date_week) |>
@@ -431,7 +429,7 @@ wkly_means_tot <- all_ves_wkdy |>
 
 
 
-# Weekly mean-adjusted counts, inside only
+# Weekly mean-adjusted counts, inside and inside maneuvers
 wkly_means_ins <- all_ves_wkdy |>
   # group to week level
   group_by(network, npz_id, Dep_ID, Dep, Date_week) |>
@@ -489,51 +487,13 @@ wkly_means_ins_small <- all_ves_wkdy |>
   mutate(sd_lower = mean_wkdy_adj - 0.5*(sd(mean_wkdy_adj)),
          sd_upper = mean_wkdy_adj + 0.5*(sd(mean_wkdy_adj)))
 
+```
 
 
 
+### Plot mean-adjusted weekday counts
 
-
-
-# wkly_means_ins <- all_ves_wkdy |>
-#   group_by(network, npz_id, Dep_ID, Dep, Date_week) |>
-#   summarize(n_days = n()) |>
-#   filter(n_days == 7) |>
-#   left_join(all_ves_wkdy) |>
-#   filter(Total_inside > 0) |>
-#   group_by(network, npz_id, Dep_ID, Dep, Date_week, Weekday) |>
-#   
-# 
-#           mean_ins = mean(Total_inside, na.rm = TRUE),
-#             mean_ins_sm = mean(Total_inside_small, na.rm = TRUE),
-#             mean_trans = mean(Inside_transit, na.rm = TRUE),
-#             mean_trans_sm = mean(Inside_transit_small, na.rm = TRUE),
-#             mean_man = mean(Inside_maneuver, na.rm = TRUE), 
-#             mean_man_sm = mean(Inside_maneuver_small, na.rm = TRUE))
-#             
-# join weekly means to full weekday dataset
-# wkdy_mean_adj <- all_ves_wkdy |>
-#   left_join(wkly_means, by = c("Date_week", "Dep")) |>
-#   group_by(network.x, npz_id.x, Dep_ID.x, Weekday) |>
-#   # only keep full weeks (7 days) and weeks with any vessels present
-#   filter(n_days == 7, 
-#          mean_tot > 0) |>
-#   # mean-adjusted value = count per weekday - weekly mean
-#   mutate(tot_wk_adj = Total_ves_dep - mean_tot,
-#          ins_wk_adj = Total_inside - mean_ins,
-#          ins_sm_adj = Total_inside_small - mean_ins_sm) |>
-#   summarise(mean_wk = mean(tot_wk_adj, na.rm = TRUE),
-#             mean_wk_ins = mean(ins_wk_adj, na.rm = TRUE),
-#             mean_wk_ins_sm = mean(ins_sm_adj, na.rm = TRUE)) |>
-#   mutate(sd_lower = mean_wk - 0.5*(sd(mean_wk)),
-#          sd_upper = mean_wk + 0.5*(sd(mean_wk)),
-#          sd_lower_ins = mean_wk_ins - 0.5*(sd(mean_wk_ins)),
-#          sd_upper_ins = mean_wk_ins + 0.5*(sd(mean_wk_ins)),
-#          sd_lower_ins_sm = mean_wk_ins - 0.5*(sd(mean_wk_ins)),
-#          sd_upper_ins_sm = mean_wk_ins_sm + 0.5*(sd(mean_wk_ins_sm)),
-#          npz_id.x = fct(npz_id.x),
-#          npz_id.x = fct_relevel(npz_id.x, c("CGMP","SIMP","DMP","NMP")))
-
+```{r plot weekly mean adj, echo=FALSE}
 ggplot(data = wkly_means_tot,
        aes(x = Weekday, y = mean_wkdy_adj)) +
   # geom_line(aes(group = Dep_ID), 
@@ -678,46 +638,72 @@ all_ves_diel <- all_sites_hp |>
          network = factor(network, levels = c("Temperate East","Northwest","South-west"))) 
 
 
-# summarize daily totals to get mean-adjusted counts per weekday
-daily_means <- all_ves_diel |>
+# Calculate daily mean-adjusted counts per hour
+daily_means_tot <- all_ves_diel |>
+  # group to date level
   group_by(network, npz_id, Dep_ID, Dep, Begin_Date_loc) |>
+  # get n_hours per day
   summarize(n_hrs = n(),
-            mean_tot = mean(Total_ves_dep, na.rm = TRUE),
-            mean_ins = mean(Total_inside, na.rm = TRUE),
-            mean_ins_sm = mean(Total_inside_small, na.rm = TRUE),
-            mean_trans = mean(Inside_transit, na.rm = TRUE),
-            mean_trans_sm = mean(Inside_transit_small, na.rm = TRUE),
-            mean_man = mean(Inside_maneuver, na.rm = TRUE), 
-            mean_man_sm = mean(Inside_maneuver_small, na.rm = TRUE))
-            
+            # and total vessels per day
+            day_sum = sum(Total_ves_dep, na.rm = TRUE)) |>
+  # only keep full days n_hrs == 24
+  # and days with vessels present
+  filter(n_hrs == 24,
+         day_sum >0) |>
+  # join to get hourly counts back
+  left_join(all_ves_diel) |>
+  # re-group to daily level
+  group_by(network, npz_id, Dep_ID, Dep, Begin_Date_loc) |>
+  # calculate mean total presence per day with vessels
+  mutate(mean_tot = mean(Total_ves_dep, na.rm = TRUE),
+         # calculate mean-adjusted counts per hour
+         tot_diel_adj = Total_ves_dep - mean_tot) |>
+  # group to hour level per deployment
+  group_by(network, npz_id, Dep_ID, Begin_Hour_loc) |>
+  # get mean of mean-adjusted ounts per hour
+  summarise(mean_diel_adj = mean(tot_diel_adj, na.rm =TRUE)) |>
+  # get lower & upper bounds for SD around mean of adjusted counts
+  mutate(sd_lower = mean_diel_adj - 0.5*(sd(mean_diel_adj)),
+         sd_upper = mean_diel_adj + 0.5*(sd(mean_diel_adj)))
   
-diel_mean_depid <- all_ves_diel |>
-  left_join(daily_means, by = c("Begin_Date_loc", "Dep"), keep = FALSE) |>
-  group_by(network.x, npz_id.x, Dep_ID.x, Begin_Hour_loc) |>
-  filter(n_hrs == 24, # only keep full days
-         # only keep days with presence for mean-adjusting
-         mean_tot > 0) |>
-  mutate(tot_diel_adj = Total_ves_dep - mean_tot,
-         ins_diel_adj = Total_inside - mean_ins,
-         ins_sm_adj = Total_inside_small - mean_ins_sm) |>
-  summarise(mean_diel = mean(tot_diel_adj, na.rm = TRUE),
-            mean_diel_ins = mean(ins_diel_adj, na.rm = TRUE),
-            mean_diel_ins_sm = mean(ins_sm_adj, na.rm = TRUE)) |>
-  mutate(sd_lower = mean_diel - 0.5*(sd(mean_diel)),
-         sd_upper = mean_diel + 0.5*(sd(mean_diel)),
-         sd_lower_ins = mean_diel_ins - 0.5*(sd(mean_diel_ins)),
-         sd_upper_ins = mean_diel_ins + 0.5*(sd(mean_diel_ins)),
-         sd_lower_ins_sm = mean_diel_ins - 0.5*(sd(mean_diel_ins)),
-         sd_upper_ins_sm = mean_diel_ins_sm + 0.5*(sd(mean_diel_ins_sm)))
+  
+  
+            # mean_tot = mean(Total_ves_dep, na.rm = TRUE),
+            # mean_ins = mean(Total_inside, na.rm = TRUE),
+            # mean_ins_sm = mean(Total_inside_small, na.rm = TRUE),
+            # mean_trans = mean(Inside_transit, na.rm = TRUE),
+            # mean_trans_sm = mean(Inside_transit_small, na.rm = TRUE),
+            # mean_man = mean(Inside_maneuver, na.rm = TRUE), 
+            # mean_man_sm = mean(Inside_maneuver_small, na.rm = TRUE))
+            
+#   
+# diel_mean_depid <- all_ves_diel |>
+#   left_join(daily_means, by = c("Begin_Date_loc", "Dep"), keep = FALSE) |>
+#   group_by(network.x, npz_id.x, Dep_ID.x, Begin_Hour_loc) |>
+#   filter(n_hrs == 24, # only keep full days
+#          # only keep days with presence for mean-adjusting
+#          mean_tot > 0) |>
+#   mutate(tot_diel_adj = Total_ves_dep - mean_tot,
+#          ins_diel_adj = Total_inside - mean_ins,
+#          ins_sm_adj = Total_inside_small - mean_ins_sm) |>
+#   summarise(mean_diel = mean(tot_diel_adj, na.rm = TRUE),
+#             mean_diel_ins = mean(ins_diel_adj, na.rm = TRUE),
+#             mean_diel_ins_sm = mean(ins_sm_adj, na.rm = TRUE)) |>
+#   mutate(sd_lower = mean_diel - 0.5*(sd(mean_diel)),
+#          sd_upper = mean_diel + 0.5*(sd(mean_diel)),
+#          sd_lower_ins = mean_diel_ins - 0.5*(sd(mean_diel_ins)),
+#          sd_upper_ins = mean_diel_ins + 0.5*(sd(mean_diel_ins)),
+#          sd_lower_ins_sm = mean_diel_ins - 0.5*(sd(mean_diel_ins)),
+#          sd_upper_ins_sm = mean_diel_ins_sm + 0.5*(sd(mean_diel_ins_sm)))
 
 
 # plot
-ggplot(data = diel_mean_depid,
-       aes(x = factor(Begin_Hour_loc), 
-           y = mean_diel)) +
+ggplot(data = daily_means_tot,
+       aes(x = Begin_Hour_loc, 
+           y = mean_diel_adj)) +
   geom_pointrange(aes(ymin = sd_lower,
                       ymax = sd_upper,
-                      group = npz_id.x,
+                      group = npz_id,
                       color = ifelse(sd_lower <= 0, 'firebrick','blue')),
                   size = 0.25,
                   show.legend = FALSE) +
@@ -725,9 +711,10 @@ ggplot(data = diel_mean_depid,
              linetype = 3, # dotted line
              colour = "black") +
   scale_color_manual(values = c("red","black"))+
+  scale_x_continuous(breaks = seq(0,23,2))+
   labs(y = "Mean-adjusted average N vessels / hour",
        x = "Hour of Day (Local TZ)")+
-   facet_nested(rows = vars(network.x, npz_id.x, Dep_ID.x), 
+   facet_nested(rows = vars(network, npz_id, Dep_ID), 
                nest_line = element_line(),
                scales = "free_y") +
   theme(
@@ -735,81 +722,80 @@ ggplot(data = diel_mean_depid,
     strip.background = element_blank(),
     strip.text.y = element_text(face = "bold")
     )
-ggsave(paste0("figs/", "Diel_mean_adj_dep_presonly.png"), width=8, height=10, units="in", dpi=300)
+ggsave(paste0("figs/", "Diel_mean_adj_dep_presonly.png"), width=8, height=12, units="in", dpi=300)
 
 
 
-
-# summarize to npz level
-diel_mean_adj_npz <- all_ves_diel |>
-  left_join(daily_means, by = c("Begin_Date_loc", "Dep"), keep = FALSE) |>
-  group_by(network.x, npz_id.x, Begin_Hour_loc) |>
-  mutate(tot_diel_adj = Total_ves_dep - mean_tot,
-         ins_diel_adj = Total_inside - mean_ins,
-         ins_sm_adj = Total_inside_small - mean_ins_sm) |>
-  summarise(mean_diel = mean(tot_diel_adj, na.rm = TRUE),
-            mean_diel_ins = mean(ins_diel_adj, na.rm = TRUE),
-            mean_diel_ins_sm = mean(ins_sm_adj, na.rm = TRUE)) |>
-  mutate(sd_lower = mean_diel - 0.5*(sd(mean_diel)),
-         sd_upper = mean_diel + 0.5*(sd(mean_diel)),
-         sd_lower_ins = mean_diel_ins - 0.5*(sd(mean_diel_ins)),
-         sd_upper_ins = mean_diel_ins + 0.5*(sd(mean_diel_ins)),
-         sd_lower_ins_sm = mean_diel_ins - 0.5*(sd(mean_diel_ins)),
-         sd_upper_ins_sm = mean_diel_ins_sm + 0.5*(sd(mean_diel_ins_sm)))
-   
-   
-ggplot(data = diel_mean_npz,
-       aes(x = factor(Begin_Hour_loc), 
-           y = mean_diel)) +
-  geom_hline(yintercept = 0, colour = "grey50") +
-  geom_pointrange(aes(ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id.x,
-                      color = ifelse(sd_lower <= 0, 'firebrick','blue')),
-                  size = 0.25,
-                  show.legend = FALSE) +
-  geom_hline(yintercept = 0, 
-             linetype = 3, # dotted line
-             colour = "black") +
-  scale_color_manual(values = c("red","black"))+
-  labs(y = "Mean-adjusted average N vessels / hour",
-       x = "Hour of Day (Local TZ)")+
-   facet_nested(rows = vars(network.x, npz_id.x), 
-               nest_line = element_line(),
-               scales = "free_y") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
-
-ggsave(paste0("figs/", "Diel_mean_adj_npz_presonly.png"), width=8, height=10, units="in", dpi=300)
+# # summarize to npz level
+# diel_mean_adj_npz <- all_ves_diel |>
+#   left_join(daily_means, by = c("Begin_Date_loc", "Dep"), keep = FALSE) |>
+#   group_by(network.x, npz_id.x, Begin_Hour_loc) |>
+#   mutate(tot_diel_adj = Total_ves_dep - mean_tot,
+#          ins_diel_adj = Total_inside - mean_ins,
+#          ins_sm_adj = Total_inside_small - mean_ins_sm) |>
+#   summarise(mean_diel = mean(tot_diel_adj, na.rm = TRUE),
+#             mean_diel_ins = mean(ins_diel_adj, na.rm = TRUE),
+#             mean_diel_ins_sm = mean(ins_sm_adj, na.rm = TRUE)) |>
+#   mutate(sd_lower = mean_diel - 0.5*(sd(mean_diel)),
+#          sd_upper = mean_diel + 0.5*(sd(mean_diel)),
+#          sd_lower_ins = mean_diel_ins - 0.5*(sd(mean_diel_ins)),
+#          sd_upper_ins = mean_diel_ins + 0.5*(sd(mean_diel_ins)),
+#          sd_lower_ins_sm = mean_diel_ins - 0.5*(sd(mean_diel_ins)),
+#          sd_upper_ins_sm = mean_diel_ins_sm + 0.5*(sd(mean_diel_ins_sm)))
+#    
+#    
+# ggplot(data = diel_mean_npz,
+#        aes(x = factor(Begin_Hour_loc), 
+#            y = mean_diel)) +
+#   geom_hline(yintercept = 0, colour = "grey50") +
+#   geom_pointrange(aes(ymin = sd_lower,
+#                       ymax = sd_upper,
+#                       group = npz_id.x,
+#                       color = ifelse(sd_lower <= 0, 'firebrick','blue')),
+#                   size = 0.25,
+#                   show.legend = FALSE) +
+#   geom_hline(yintercept = 0, 
+#              linetype = 3, # dotted line
+#              colour = "black") +
+#   scale_color_manual(values = c("red","black"))+
+#   labs(y = "Mean-adjusted average N vessels / hour",
+#        x = "Hour of Day (Local TZ)")+
+#    facet_nested(rows = vars(network.x, npz_id.x), 
+#                nest_line = element_line(),
+#                scales = "free_y") +
+#   theme(
+#     axis.text.x = element_text(face = "bold"),
+#     strip.background = element_blank(),
+#     strip.text.y = element_text(face = "bold")
+#     )
+# 
+# ggsave(paste0("figs/", "Diel_mean_adj_npz_presonly.png"), width=8, height=10, units="in", dpi=300)
 
 
 # Inside small vessels
-
-ggplot(data = diel_mean_npz |> filter(npz_id.x != "SWCMP"),
-       aes(x = factor(Begin_Hour_loc), 
-           y = mean_diel_ins_sm)) +
-  geom_hline(yintercept = 0, colour = "grey50") +
-  geom_pointrange(aes(ymin = sd_lower_ins_sm,
-                      ymax = sd_upper_ins_sm,
-                      group = npz_id.x,
-                      color = ifelse(mean_diel_ins_sm < 0, 'firebrick','blue')),
-                  size = 0.25,
-                  show.legend = FALSE) +
-  scale_color_viridis_d(begin = 0.3, end = 0.7, 
-                        option = "H",
-                        direction = -1)+
-  labs(y = "Mean-adjusted average N vessels / hour",
-       x = "Hour of Day (Local TZ)")+
-  facet_grid(rows = vars(npz_id.x)) +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    strip.text.y = element_text(face = "bold")
-    )
-
-ggsave(paste0("figs/", "Diel_mean_adj_npz_ins_sm.png"), width=8, height=10, units="in", dpi=300)
+# 
+# ggplot(data = diel_mean_npz |> filter(npz_id.x != "SWCMP"),
+#        aes(x = factor(Begin_Hour_loc), 
+#            y = mean_diel_ins_sm)) +
+#   geom_hline(yintercept = 0, colour = "grey50") +
+#   geom_pointrange(aes(ymin = sd_lower_ins_sm,
+#                       ymax = sd_upper_ins_sm,
+#                       group = npz_id.x,
+#                       color = ifelse(mean_diel_ins_sm < 0, 'firebrick','blue')),
+#                   size = 0.25,
+#                   show.legend = FALSE) +
+#   scale_color_viridis_d(begin = 0.3, end = 0.7, 
+#                         option = "H",
+#                         direction = -1)+
+#   labs(y = "Mean-adjusted average N vessels / hour",
+#        x = "Hour of Day (Local TZ)")+
+#   facet_grid(rows = vars(npz_id.x)) +
+#   theme(
+#     axis.text.x = element_text(face = "bold"),
+#     strip.text.y = element_text(face = "bold")
+#     )
+# 
+# ggsave(paste0("figs/", "Diel_mean_adj_npz_ins_sm.png"), width=8, height=10, units="in", dpi=300)
 
 
 
