@@ -461,6 +461,33 @@ wkly_means_ins <- all_ves_wkdy |>
          man_sd_upper = mean_man_wkdy_adj + 0.5*(sd(mean_man_wkdy_adj)))
 
 
+# Weekly mean-adjusted counts, inside and inside maneuvers
+wkly_means_ins_man <- all_ves_wkdy |>
+  # group to week level
+  group_by(network, npz_id, Dep_ID, Dep, Date_week) |>
+  # get n_days per week in dataset
+  summarize(n_days = n(),
+            week_sum = sum(Inside_maneuver, na.rm = TRUE)) |>
+  # only keep full weeks n_days == 7
+  # only keep weeks with presence
+  filter(n_days == 7,
+         week_sum > 0) |>
+  # get original weekday counts
+  left_join(all_ves_wkdy) |>
+  # re-group to week level
+  group_by(network, npz_id, Dep_ID, Dep, Date_week) |>
+  # calculate weekly mean of total presence for days with presence
+  mutate(mean_man = mean(Inside_maneuver, na.rm = TRUE),
+         # calculate mean-adjusted counts per weekday
+         man_wkdy_adj = Inside_maneuver - mean_man) |>
+  group_by(network, npz_id, Dep_ID, Weekday) |>
+  # get mean of mean-adjusted counts for each weekday
+  summarise(mean_man_wkdy_adj = mean(man_wkdy_adj, na.rm = TRUE)) |>
+  # get lower & upper bounds of SD of the mean of the adjusted counts
+  mutate(man_sd_lower = mean_man_wkdy_adj - 0.5*(sd(mean_man_wkdy_adj)),
+         man_sd_upper = mean_man_wkdy_adj + 0.5*(sd(mean_man_wkdy_adj)))
+
+
 # Weekly mean-adjusted counts, inside small only
 wkly_means_ins_small <- all_ves_wkdy |>
   # group to week level
@@ -554,7 +581,7 @@ ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly_inside.png"), width=5, 
 
 # Inside maneuvers only
 # Inside vessels
-ggplot(data = wkly_means_ins,
+ggplot(data = wkly_means_ins_man,
        aes(x = Weekday, y = mean_man_wkdy_adj)) +
   # geom_line(aes(group = Dep_ID), 
   #           color = "gray70")+
@@ -666,7 +693,35 @@ daily_means_tot <- all_ves_diel |>
   mutate(sd_lower = mean_diel_adj - 0.5*(sd(mean_diel_adj)),
          sd_upper = mean_diel_adj + 0.5*(sd(mean_diel_adj)))
   
-  
+
+
+# Calculate daily mean-adjusted counts per hour
+daily_means_ins <- all_ves_diel |>
+  # group to date level
+  group_by(network, npz_id, Dep_ID, Dep, Begin_Date_loc) |>
+  # get n_hours per day
+  summarize(n_hrs = n(),
+            # and total vessels per day
+            day_sum = sum(Total_inside, na.rm = TRUE)) |>
+  # only keep full days n_hrs == 24
+  # and days with vessels present
+  filter(n_hrs == 24,
+         day_sum > 0) |>
+  # join to get hourly counts back
+  left_join(all_ves_diel) |>
+  # re-group to daily level
+  group_by(network, npz_id, Dep_ID, Dep, Begin_Date_loc) |>
+  # calculate mean total presence per day with vessels
+  mutate(mean_ins = mean(Total_inside, na.rm = TRUE),
+         # calculate mean-adjusted counts per hour
+         ins_diel_adj = Total_inside - mean_ins) |>
+  # group to hour level per deployment
+  group_by(network, npz_id, Dep_ID, Begin_Hour_loc) |>
+  # get mean of mean-adjusted ounts per hour
+  summarise(mean_diel_adj = mean(ins_diel_adj, na.rm =TRUE)) |>
+  # get lower & upper bounds for SD around mean of adjusted counts
+  mutate(sd_lower = mean_diel_adj - 0.5*(sd(mean_diel_adj)),
+         sd_upper = mean_diel_adj + 0.5*(sd(mean_diel_adj)))
   
             # mean_tot = mean(Total_ves_dep, na.rm = TRUE),
             # mean_ins = mean(Total_inside, na.rm = TRUE),
@@ -697,8 +752,42 @@ daily_means_tot <- all_ves_diel |>
 #          sd_upper_ins_sm = mean_diel_ins_sm + 0.5*(sd(mean_diel_ins_sm)))
 
 
-# plot
+# plot total vessels
 ggplot(data = daily_means_tot,
+       aes(x = Begin_Hour_loc, 
+           y = mean_diel_adj)) +
+  geom_line(aes(group = Dep_ID),
+            color = "gray70")+
+  geom_pointrange(aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id,
+                      color = ifelse(sd_lower <= 0, 'firebrick','blue')),
+                  size = 0.25,
+                  show.legend = FALSE) +
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  scale_color_manual(values = c("red","black"))+
+  scale_x_continuous(breaks = seq(0,23,2))+
+  labs(y = "Mean-adjusted average N vessels / hour",
+       x = "Hour of Day (Local TZ)",
+       title = "Total vessels")+
+   facet_nested(rows = vars(network, npz_id, Dep_ID), 
+               nest_line = element_line(),
+               scales = "free_y") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+ggsave(paste0("figs/", "Diel_mean_adj_dep_presonly_withline.png"), width=8, height=12, units="in", dpi=300)
+
+
+# Plot inside vessels
+
+
+# plot total vessels
+ggplot(data = daily_means_ins,
        aes(x = Begin_Hour_loc, 
            y = mean_diel_adj)) +
   geom_pointrange(aes(ymin = sd_lower,
@@ -713,7 +802,8 @@ ggplot(data = daily_means_tot,
   scale_color_manual(values = c("red","black"))+
   scale_x_continuous(breaks = seq(0,23,2))+
   labs(y = "Mean-adjusted average N vessels / hour",
-       x = "Hour of Day (Local TZ)")+
+       x = "Hour of Day (Local TZ)",
+       title = "Inside vessels")+
    facet_nested(rows = vars(network, npz_id, Dep_ID), 
                nest_line = element_line(),
                scales = "free_y") +
@@ -722,7 +812,7 @@ ggplot(data = daily_means_tot,
     strip.background = element_blank(),
     strip.text.y = element_text(face = "bold")
     )
-ggsave(paste0("figs/", "Diel_mean_adj_dep_presonly.png"), width=8, height=12, units="in", dpi=300)
+ggsave(paste0("figs/", "Diel_mean_adj_dep_presonly_ins.png"), width=8, height=12, units="in", dpi=300)
 
 
 
