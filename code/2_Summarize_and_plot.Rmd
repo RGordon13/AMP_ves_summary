@@ -523,8 +523,8 @@ wkly_means_ins_small <- all_ves_wkdy |>
 ```{r plot weekly mean adj, echo=FALSE}
 ggplot(data = wkly_means_tot,
        aes(x = Weekday, y = mean_wkdy_adj)) +
-  # geom_line(aes(group = Dep_ID), 
-  #           color = "gray70")+
+  geom_line(aes(group = Dep_ID),
+            color = "gray70")+
   geom_pointrange(aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id,
@@ -553,8 +553,8 @@ ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly.png"), width=5, height=
 # Inside vessels
 ggplot(data = wkly_means_ins,
        aes(x = Weekday, y = mean_wkdy_adj)) +
-  # geom_line(aes(group = Dep_ID), 
-  #           color = "gray70")+
+  geom_line(aes(group = Dep_ID),
+            color = "gray70")+
   geom_pointrange(aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id,
@@ -583,8 +583,8 @@ ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly_inside.png"), width=5, 
 # Inside vessels
 ggplot(data = wkly_means_ins_man,
        aes(x = Weekday, y = mean_man_wkdy_adj)) +
-  # geom_line(aes(group = Dep_ID), 
-  #           color = "gray70")+
+  geom_line(aes(group = Dep_ID),
+            color = "gray70")+
   geom_pointrange(aes(ymin = man_sd_lower,
                       ymax = man_sd_upper,
                       group = npz_id,
@@ -613,8 +613,8 @@ ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly_insideman.png"), width=
 # Inside small vessels
 ggplot(data = wkly_means_ins_small,
        aes(x = Weekday, y = mean_wkdy_adj)) +
-  # geom_line(aes(group = Dep_ID), 
-  #           color = "gray70")+
+  geom_line(aes(group = Dep_ID),
+            color = "gray70")+
   geom_pointrange(aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id,
@@ -790,6 +790,8 @@ ggsave(paste0("figs/", "Diel_mean_adj_dep_presonly_withline.png"), width=8, heig
 ggplot(data = daily_means_ins,
        aes(x = Begin_Hour_loc, 
            y = mean_diel_adj)) +
+  geom_line(aes(group = Dep_ID),
+            color = "gray70")+
   geom_pointrange(aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id,
