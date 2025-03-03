@@ -836,10 +836,58 @@ ggplot(data = daily_means_tot,
 ggsave(paste0("figs/", "Diel_mean_adj_dep_presonly_withline.png"), width=8, height=12, units="in", dpi=300)
 
 
+
+#### Combined total & inside to help visualize differences in patterns
+
+ggplot(data = daily_means_tot,
+       aes(x = Begin_Hour_loc, 
+           y = mean_diel_adj)) +
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  geom_line(aes(group = Dep_ID),
+            color = "black")+
+  geom_pointrange(aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id,
+                      color = ifelse(sd_lower <= 0, 'firebrick','blue')),
+                  size = 0.25,
+                  show.legend = FALSE) +
+  geom_line(data = daily_means_ins,
+            aes(group = Dep_ID),
+            color = "blue")+
+  geom_pointrange(data = daily_means_ins,
+                  aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id,
+                      color = ifelse(sd_lower <= 0, 'salmon','chartreuse')),
+                  size = 0.25,
+                  show.legend = FALSE) +
+   scale_color_manual(values = c('red', # above 0, total
+                                'darkblue', # above 0, inside
+                                'black', # below 0, total
+                                'gray70' # below 0, inside
+                                ))+
+  scale_x_continuous(breaks = seq(0,23,2))+
+  labs(y = "Mean-adjusted average N vessels / hour",
+       x = "Hour of Day (Local TZ)",
+       title = "Total vessels")+
+   facet_nested(rows = vars(network, npz_id, Dep_ID), 
+               nest_line = element_line(),
+               scales = "free_y") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+ggsave(paste0("figs/", "Diel_mean_adj_dep_combined.png"), width=8, height=12, units="in", dpi=300)
+
+
+
+
+
+
 # Plot inside vessels
-
-
-# plot total vessels
 ggplot(data = daily_means_ins,
        aes(x = Begin_Hour_loc, 
            y = mean_diel_adj)) +
