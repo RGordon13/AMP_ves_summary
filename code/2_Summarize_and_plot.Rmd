@@ -206,8 +206,9 @@ all_ves_long <- all_ves_by_site |>
 
 
 all_ves_by_day <- all_sites_hp |>
-  group_by(network, npz_id, Site_ID, Dep_ID, Dep, Begin_Date_loc) |>
-  summarise(n_days = n_distinct(Begin_Date_loc),
+  group_by(network, npz_id, Site_ID, Dep_ID, Dep, Date_week, Begin_Date_loc) |>
+  summarise(n_hrs = n_distinct(Begin_Hour_loc),
+            n_ves_hrs = sum(ifelse(ves_yn == "Y", 1, 0), na.rm = TRUE),
             Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
             Total_inside = sum(total_inside, na.rm = TRUE),
             Total_inside_small = sum(total_inside_small, na.rm = TRUE),
@@ -217,10 +218,32 @@ all_ves_by_day <- all_sites_hp |>
             mean_total_ves = mean(Total_Vessels),
             mean_ins_ves = mean(total_inside),
             mean_ins_sm_ves = mean(total_inside_small)) |>
-  mutate(Inside_transit = Total_inside - Inside_maneuver,
+  mutate(daily_ves_perhr = Total_ves_dep/n_hrs,
+         total_prophr = n_ves_hrs/n_hrs,
+        Inside_transit = Total_inside - Inside_maneuver,
          Inside_transit_small = Total_inside_small - Inside_maneuver_small)
 
-
+all_ves_by_day_noyr <- all_sites_hp |>
+  group_by(network, npz_id, Site_ID, Dep_ID, Dep, Date_week, Date_noyr) |>
+  summarise(n_hrs = n_distinct(Begin_Hour_loc),
+            n_ves_hrs = sum(ifelse(ves_yn == "Y", 1, 0), na.rm = TRUE),
+            Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
+            Total_inside = sum(total_inside, na.rm = TRUE),
+            Total_inside_small = sum(total_inside_small, na.rm = TRUE),
+            Inside_maneuver = sum(man_inside, na.rm = TRUE),
+            Inside_maneuver_small = sum(man_inside_small, na.rm = TRUE),
+            # daily means
+            mean_total_ves = mean(Total_Vessels),
+            mean_ins_ves = mean(total_inside),
+            mean_ins_sm_ves = mean(total_inside_small)) |>
+  mutate(daily_ves_perhr = Total_ves_dep/n_hrs,
+         total_prophr = n_ves_hrs/n_hrs,
+         Inside_transit = Total_inside - Inside_maneuver,
+         Inside_transit_small = Total_inside_small - Inside_maneuver_small,
+         network = case_when(npz_id == "CGMP" | npz_id == "SIMP" ~ "Temperate East",
+                             npz_id == "DMP" | npz_id == "NMP" ~ "Northwest", TRUE ~ "South-west"
+         ),
+         network = factor(network, levels = c("Temperate East","Northwest","South-west"))) 
 
 
 
@@ -254,7 +277,28 @@ ggplot(data = all_ves_by_site,
     strip.text.y = element_text(face = "bold")
     )
 
+# weekly plots for nominal year
+ggplot(data = all_ves_by_day_noyr |> filter(total_prophr > 0),
+       aes(x = as_date(Date_noyr),
+           y = total_prophr)) +
+  geom_boxplot(aes(group = as_date(Date_week),
+                   fill = network),
+               show.legend = FALSE) + 
+  scale_x_date(date_breaks = "months", 
+               date_labels = "%b")+
+  labs(y = "N hours present /\nN total hours",
+       x = "Date")+
+  facet_nested(rows = vars(network, npz_id), 
+               nest_line = element_line(),
+               scales = "free_x") +
+    theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
 
+ggsave(paste0("figs/", "Total_boxplot_daily_prophr_1yr.png"), width=10, height=8,
+       units="in", dpi=300)
 
 ```
 
