@@ -550,6 +550,59 @@ ggplot(data = wkly_means_tot,
 ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly.png"), width=5, height=12, units="in", dpi=300)
 
 
+#### Try plotting total & inside on same plots...? ####
+# not necessarily for publication, just helps me wrap my head around patterns
+
+ggplot(data = wkly_means_tot,
+       aes(x = Weekday, y = mean_wkdy_adj)) +
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  geom_line(aes(group = Dep_ID),
+            color = "black")+
+  geom_pointrange(aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id,
+                      color = ifelse(sd_lower <= 0, 'gray70','black')),
+                  size = 0.25,
+                  show.legend = FALSE) +
+  geom_line(data = wkly_means_ins,
+       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
+            color = "blue")+
+  geom_pointrange(data = wkly_means_ins,
+                  aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id,
+                      color = ifelse(sd_lower <= 0, 'lightblue','darkblue')),
+                  size = 0.25,
+                  show.legend = FALSE) +
+  
+  scale_color_manual(values = c('red', # above 0, total
+                                'darkblue', # above 0, inside
+                                'black', # below 0, total
+                                'gray70' # below 0, inside
+                                ))+
+  labs(title = "Total vessels",
+       y = "Mean-adjusted average N vessels / weekday",
+       x = "Weekday")+
+  facet_nested(rows = vars(network, npz_id, Dep_ID), 
+               nest_line = element_line(),
+               scales = "free_y") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+
+
+ggsave(paste0("figs/", "Weekday_mean_adj_combined_total_ins.png"), width=5, height=12, units="in", dpi=300)
+
+
+
+
+
+
+
 # Inside vessels
 ggplot(data = wkly_means_ins,
        aes(x = Weekday, y = mean_wkdy_adj)) +
