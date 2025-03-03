@@ -863,10 +863,11 @@ ggplot(data = daily_means_tot,
                       color = ifelse(sd_lower <= 0, 'salmon','chartreuse')),
                   size = 0.25,
                   show.legend = FALSE) +
-   scale_color_manual(values = c('red', # above 0, total
-                                'darkblue', # above 0, inside
+  scale_color_viridis_d() + 
+   scale_color_manual(values = c('black', # above 0, total
+                                'blue', # above 0, inside
                                 'black', # below 0, total
-                                'gray70' # below 0, inside
+                                'blue' # below 0, inside
                                 ))+
   scale_x_continuous(breaks = seq(0,23,2))+
   labs(y = "Mean-adjusted average N vessels / hour",
@@ -880,7 +881,7 @@ ggplot(data = daily_means_tot,
     strip.background = element_blank(),
     strip.text.y = element_text(face = "bold")
     )
-ggsave(paste0("figs/", "Diel_mean_adj_dep_combined.png"), width=8, height=12, units="in", dpi=300)
+ggsave(paste0("figs/", "Diel_mean_adj_dep_combined_1color.png"), width=8, height=12, units="in", dpi=300)
 
 
 
