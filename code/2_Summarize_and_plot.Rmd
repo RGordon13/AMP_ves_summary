@@ -111,20 +111,82 @@ Add in dates without coverage
 
 ```{r data gaps, include=FALSE}
 
+##### Deployment info ###
 
-# load in deployment info CSV
+# create table of data gaps within nominal year (2000)
 
-# deploy_info <- read_csv("data/AMP_deployment_info.csv")
-# 
-# date_gaps <- deploy_info |>
-#   mutate(Dep = gsub(pattern = "PARKSAUSTRALIA_",
-#                     replacement = "",
-#                     x = PROJECT_NAME)) |>
-#   left_join(all_sites_hp, by = "Dep", multiple = "first") |>
-#   select(c(Dep, all_dep_start, pre_site_gap_end, 
-#            post_site_gap_start, all_dep_end,
-#            dep_gap_start, dep_gap_end, 
-#            network, npz_id, Site_ID))
+gaps <- data.frame("Gap_start" = c(as.POSIXct("2000-02-21",format="%Y-%m-%d"), #CGMP gap 1 start
+                                   as.POSIXct("2000-08-05",format="%Y-%m-%d"), #CGMP gap 2 start
+                                   as.POSIXct("2000-01-16",format="%Y-%m-%d"), #SIMP gap 1 start
+                                   as.POSIXct("2000-09-12",format="%Y-%m-%d"), #SIMP gap 2 start
+                                   as.POSIXct("2000-01-01",format="%Y-%m-%d"), #DMP gap 1 start
+                                   as.POSIXct("2000-11-05",format="%Y-%m-%d"), #DMP gap 2 start
+                                   as.POSIXct("2000-01-01",format="%Y-%m-%d"), #NMP gap 1 start
+                                   as.POSIXct("2000-11-19",format="%Y-%m-%d"), #NMP gap 2 start
+                                   as.POSIXct("2000-01-01",format="%Y-%m-%d"), #GMP gap 1 start
+                                   as.POSIXct("2000-04-04",format="%Y-%m-%d"), #GMP gap 2 start
+                                   as.POSIXct("2000-01-01",format="%Y-%m-%d"), #JMP gap 1 start
+                                   as.POSIXct("2000-03-11",format="%Y-%m-%d"), #JMP gap 2 start
+                                   as.POSIXct("2000-01-01",format="%Y-%m-%d"), #MMP gap 1 start
+                                   as.POSIXct("2000-05-04",format="%Y-%m-%d"), #MMP gap 2 start
+                                   as.POSIXct("2000-01-01",format="%Y-%m-%d"), #SWCMP gap 1 start
+                                   as.POSIXct("2000-04-12",format="%Y-%m-%d"), #SWCMP gap 2 start
+                                   as.POSIXct("2000-01-01",format="%Y-%m-%d"), #TRMP gap 1 start
+                                   as.POSIXct("2000-08-03",format="%Y-%m-%d") #TRMP gap 2 start
+                                   ),
+                                    
+                   
+                   "Gap_end" = c(as.POSIXct("2000-04-10",format="%Y-%m-%d"), #CGMP gap 1 end
+                                   as.POSIXct("2000-12-11",format="%Y-%m-%d"), #CGMP gap 2 end
+                                   as.POSIXct("2000-06-09",format="%Y-%m-%d"), #SIMP gap 1 end
+                                   as.POSIXct("2000-12-11",format="%Y-%m-%d"), #SIMP gap 2 end
+                                   as.POSIXct("2000-09-08",format="%Y-%m-%d"), #DMP gap 1 end
+                                   as.POSIXct("2000-12-31",format="%Y-%m-%d"), #DMP gap 2 end
+                                   as.POSIXct("2000-09-24",format="%Y-%m-%d"), #NMP gap 1 end
+                                   as.POSIXct("2000-12-31",format="%Y-%m-%d"), #NMP gap 2 end
+                                   as.POSIXct("2000-01-12",format="%Y-%m-%d"), #GMP gap 1 end
+                                   as.POSIXct("2000-12-31",format="%Y-%m-%d"), #GMP gap 2 end
+                                   as.POSIXct("2000-01-04",format="%Y-%m-%d"), #JMP gap 1 end
+                                   as.POSIXct("2000-12-31",format="%Y-%m-%d"), #JMP gap 2 end
+                                   as.POSIXct("2000-02-07",format="%Y-%m-%d"), #MMP gap 1 end
+                                   as.POSIXct("2000-12-31",format="%Y-%m-%d"), #MMP gap 2 end
+                                   as.POSIXct("2000-01-07",format="%Y-%m-%d"), #SWCMP gap 1 end
+                                   as.POSIXct("2000-12-31",format="%Y-%m-%d"), #SWCMP gap 2 end
+                                   as.POSIXct("2000-05-09",format="%Y-%m-%d"), #TRMP gap 1 end
+                                   as.POSIXct("2000-12-31",format="%Y-%m-%d") #TRMP gap 2 end
+                                 ),
+                   
+                   "npz_id" = c("CGMP",
+                              "CGMP",
+                              "SIMP",
+                              "SIMP",
+                              "DMP",
+                              "DMP",
+                              "NMP",
+                              "NMP",
+                              "GMP",
+                              "GMP",
+                              "JMP",
+                              "JMP",
+                              "MMP",
+                              "MMP",
+                              "SWCMP",
+                              "SWCMP",
+                              "TRMP",
+                              "TRMP"))
+
+
+gaps <- gaps |>
+  mutate(network = case_when(npz_id == "CGMP" | npz_id == "SIMP" ~ "Temperate East",
+                             npz_id == "DMP" | npz_id == "NMP" ~ "Northwest", TRUE ~ "South-west"
+         ),
+         network = factor(network, levels = c("Temperate East","Northwest","South-west")))
+
+
+
+gaps_wk <- gaps |>
+  mutate(Gap_start = floor_date(Gap_start, "1 week"),
+         Gap_end = floor_date(Gap_end, "1 week"))
 
 ```
 
@@ -278,14 +340,23 @@ ggplot(data = all_ves_by_site,
     )
 
 # weekly plots for nominal year
-ggplot(data = all_ves_by_day_noyr |> filter(total_prophr > 0),
+ggplot() +
+  geom_boxplot(data = all_ves_by_day_noyr |> filter(total_prophr > 0),
        aes(x = as_date(Date_noyr),
-           y = total_prophr)) +
-  geom_boxplot(aes(group = as_date(Date_week),
-                   fill = network),
+           y = total_prophr, 
+           group = as_date(Date_week),
+           fill = network),
                show.legend = FALSE) + 
+    geom_rect(data = gaps,
+            aes(xmin = as_date(Gap_start),
+                xmax = as_date(Gap_end),
+                ymin = 0,
+                ymax = 0.8),
+            fill = "grey80",
+            alpha = 0.7)+
   scale_x_date(date_breaks = "months", 
                date_labels = "%b")+
+
   labs(y = "N hours present /\nN total hours",
        x = "Date")+
   facet_nested(rows = vars(network, npz_id), 
