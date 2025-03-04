@@ -356,7 +356,9 @@ ggplot() +
             alpha = 0.7)+
   scale_x_date(date_breaks = "months", 
                date_labels = "%b")+
-
+scale_fill_manual(values = c("Temperate East" = "#00AB8E",
+                             "Northwest" = "#A05EB5",
+                             "South-west" = "#485CC7"))+
   labs(y = "N hours present /\nN total hours",
        x = "Date")+
   facet_nested(rows = vars(network, npz_id), 
