@@ -17,9 +17,10 @@ lapply(tidyverse_short, require, character.only = TRUE)
 
 library(scales)
 library(ggalt)
-library(ggsci)
+# library(ggsci)
 library(ggdist)
 library(ggh4x) # nested faceting
+library(ggpubr) # additional options for publication plots
 
 theme_set(theme_bw(
   base_size = 14
@@ -107,7 +108,6 @@ all_sites_hp <- all_sites_hp |>
 ## Data gaps
 
 Add in dates without coverage 
-**(this is still in progress)**
 
 ```{r data gaps, include=FALSE}
 
@@ -668,8 +668,7 @@ ggplot(data = wkly_means_tot,
 ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly.png"), width=5, height=12, units="in", dpi=300)
 
 
-#### Try plotting total & inside on same plots...? ####
-# not necessarily for publication, just helps me wrap my head around patterns
+#### Try plotting total & inside on same plots
 
 ggplot(data = wkly_means_tot,
        aes(x = Weekday, y = mean_wkdy_adj)) +
@@ -684,7 +683,7 @@ ggplot(data = wkly_means_tot,
                       # color = ifelse(sd_lower <= 0, 'gray70','black')
                       ),
                   color = "grey50",
-                  size = 0.25,
+                  size = 0.1,
                   show.legend = FALSE) +
   geom_line(data = wkly_means_ins,
        aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
@@ -697,7 +696,7 @@ ggplot(data = wkly_means_tot,
                       # color = ifelse(sd_lower <= 0, 'lightblue','darkblue')
                       ), 
                   color = "black",
-                  size = 0.25,
+                  size = 0.1,
                   show.legend = FALSE) +
   # scale_color_manual(values = c('black', # above 0, total
   #                               'darkblue', # above 0, inside
@@ -706,7 +705,8 @@ ggplot(data = wkly_means_tot,
   #                               ))+
   labs(y = "Mean-adjusted average N vessels / weekday",
        x = "Weekday")+
-  facet_nested(rows = vars(network, npz_id, Dep_ID), 
+  facet_nested(rows = vars(npz_id, Dep_ID),
+               cols = vars(network),
                nest_line = element_line(),
                scales = "free_y") +
   theme(
@@ -717,6 +717,138 @@ ggplot(data = wkly_means_tot,
 
 
 ggsave(paste0("figs/", "Weekday_mean_adj_combined_total_ins.png"), width=5, height=12, units="in", dpi=300)
+
+
+
+# Use ggarrange to make multipanel plot
+wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |> 
+                               filter(network == "Temperate East"),
+       aes(x = Weekday, y = mean_wkdy_adj)) +
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  geom_line(aes(group = Dep_ID),
+            color = "grey50")+
+  geom_pointrange(aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id
+                      ),
+                  color = "grey50",
+                  size = 0.1,
+                  show.legend = FALSE) +
+  geom_line(data = wkly_means_ins |> 
+                               filter(network == "Temperate East"),
+       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
+       color = "black")+
+  geom_pointrange(aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id
+                      ), 
+                  color = "black",
+                  size = 0.1,
+                  show.legend = FALSE) +
+  labs(y = "Mean-adjusted average N vessels / weekday",
+       x = "")+
+  facet_nested(rows = vars(npz_id, Dep_ID),
+               # cols = vars(network),
+               nest_line = element_line(),
+               scales = "fixed") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+
+
+
+wkdy_plot_northwest <- ggplot(data = wkly_means_tot |> 
+                               filter(network == "Northwest"),
+       aes(x = Weekday, y = mean_wkdy_adj)) +
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  geom_line(aes(group = Dep_ID),
+            color = "grey50")+
+  geom_pointrange(aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id
+                      ),
+                  color = "grey50",
+                  size = 0.1,
+                  show.legend = FALSE) +
+  geom_line(data = wkly_means_ins |> 
+                               filter(network == "Northwest"),
+       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
+       color = "black")+
+  geom_pointrange(data = wkly_means_ins |> 
+                               filter(network == "Northwest"),
+                  aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id
+                      ), 
+                  color = "black",
+                  size = 0.1,
+                  show.legend = FALSE) +
+  labs(y = "",
+       x = "Weekday")+
+  facet_nested(rows = vars(npz_id, Dep_ID),
+               # cols = vars(network),
+               nest_line = element_line(),
+               scales = "fixed") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+
+
+wkdy_plot_southwest <- ggplot(data = wkly_means_tot |> 
+                               filter(network == "South-west"),
+       aes(x = Weekday, y = mean_wkdy_adj)) +
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  geom_line(aes(group = Dep_ID),
+            color = "grey50")+
+  geom_pointrange(aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id
+                      ),
+                  color = "grey50",
+                  size = 0.1,
+                  show.legend = FALSE) +
+  geom_line(data = wkly_means_ins |> 
+                               filter(network == "South-west"),
+       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
+       color = "black")+
+  geom_pointrange(data = wkly_means_ins |> 
+                               filter(network == "South-west"),
+                  aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id
+                      ), 
+                  color = "black",
+                  size = 0.1,
+                  show.legend = FALSE) +
+  labs(y = "",
+       x = "")+
+  facet_nested(rows = vars(npz_id, Dep_ID),
+               # cols = vars(network),
+               nest_line = element_line(),
+               scales = "fixed") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+
+
+ggarrange(wkdy_plot_tempeast, wkdy_plot_northwest, wkdy_plot_southwest,
+          nrow = 1, 
+          heights = c(1,0.5,1),
+          labels = c("Temperate East","Northwest","South-west"),
+          vjust=0.5, hjust=-0.5)
+
 
 
 
