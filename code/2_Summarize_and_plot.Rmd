@@ -740,7 +740,8 @@ wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |>
                                filter(network == "Temperate East"),
        aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
        color = "black")+
-  geom_pointrange(aes(ymin = sd_lower,
+  geom_pointrange(data = wkly_means_ins |> 
+                               filter(network == "Temperate East"), aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id
                       ), 
@@ -748,7 +749,7 @@ wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |>
                   size = 0.1,
                   show.legend = FALSE) +
   labs(y = "Mean-adjusted average N vessels / weekday",
-       x = "")+
+       x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
                nest_line = element_line(),
@@ -756,7 +757,8 @@ wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |>
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
+    strip.text.y = element_text(face = "bold"),
+    plot.margin = margin(t = 20, b = 5.5, l = 5.5)
     )
 
 
@@ -798,7 +800,8 @@ wkdy_plot_northwest <- ggplot(data = wkly_means_tot |>
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
+    strip.text.y = element_text(face = "bold"),
+    plot.margin = margin(t = 20, b = 356)
     )
 
 
@@ -831,7 +834,7 @@ wkdy_plot_southwest <- ggplot(data = wkly_means_tot |>
                   size = 0.1,
                   show.legend = FALSE) +
   labs(y = "",
-       x = "")+
+       x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
                nest_line = element_line(),
@@ -839,16 +842,17 @@ wkdy_plot_southwest <- ggplot(data = wkly_means_tot |>
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
+    strip.text.y = element_text(face = "bold"),
+    plot.margin = margin(t = 20, r = 5.5, b = 93)
     )
 
 
 ggarrange(wkdy_plot_tempeast, wkdy_plot_northwest, wkdy_plot_southwest,
           nrow = 1, 
-          heights = c(1,0.5,1),
           labels = c("Temperate East","Northwest","South-west"),
-          vjust=0.5, hjust=-0.5)
+          vjust=1.25)
 
+ggsave(paste0("figs/", "Weekday_mean_adj_horiz_panels.png"), width=12, height=8, units="in", dpi=300)
 
 
 
