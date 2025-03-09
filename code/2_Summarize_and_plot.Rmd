@@ -641,33 +641,33 @@ wkly_means_ins_small <- all_ves_wkdy |>
 ### Plot mean-adjusted weekday counts
 
 ```{r plot weekly mean adj, echo=FALSE}
-ggplot(data = wkly_means_tot,
-       aes(x = Weekday, y = mean_wkdy_adj)) +
-  geom_line(aes(group = Dep_ID),
-            color = "gray70")+
-  geom_pointrange(aes(ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id,
-                      color = ifelse(sd_lower <= 0, 'firebrick','blue')),
-                  size = 0.25,
-                  show.legend = FALSE) +
-  geom_hline(yintercept = 0, 
-             linetype = 3, # dotted line
-             colour = "black") +
-  scale_color_manual(values = c("red","black"))+
-  labs(title = "Total vessels",
-       y = "Mean-adjusted average N vessels / weekday",
-       x = "Weekday")+
-  facet_nested(rows = vars(network, npz_id, Dep_ID), 
-               nest_line = element_line(),
-               scales = "free_y") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
-
-ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly.png"), width=5, height=12, units="in", dpi=300)
+# ggplot(data = wkly_means_tot,
+#        aes(x = Weekday, y = mean_wkdy_adj)) +
+#   geom_line(aes(group = Dep_ID),
+#             color = "gray70")+
+#   geom_pointrange(aes(ymin = sd_lower,
+#                       ymax = sd_upper,
+#                       group = npz_id,
+#                       color = ifelse(sd_lower <= 0, 'firebrick','blue')),
+#                   size = 0.25,
+#                   show.legend = FALSE) +
+#   geom_hline(yintercept = 0, 
+#              linetype = 3, # dotted line
+#              colour = "black") +
+#   scale_color_manual(values = c("red","black"))+
+#   labs(title = "Total vessels",
+#        y = "Mean-adjusted average N vessels / weekday",
+#        x = "Weekday")+
+#   facet_nested(rows = vars(network, npz_id, Dep_ID), 
+#                nest_line = element_line(),
+#                scales = "free_y") +
+#   theme(
+#     axis.text.x = element_text(face = "bold"),
+#     strip.background = element_blank(),
+#     strip.text.y = element_text(face = "bold")
+#     )
+# 
+# ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly.png"), width=5, height=12, units="in", dpi=300)
 
 
 #### Try plotting total & inside on same plots
@@ -693,18 +693,11 @@ ggplot(data = wkly_means_tot,
   geom_pointrange(data = wkly_means_ins,
                   aes(ymin = sd_lower,
                       ymax = sd_upper,
-                      group = npz_id,
-                      
-                      # color = ifelse(sd_lower <= 0, 'lightblue','darkblue')
+                      group = npz_id
                       ), 
                   color = "black",
                   size = 0.1,
                   show.legend = FALSE) +
-  # scale_color_manual(values = c('black', # above 0, total
-  #                               'darkblue', # above 0, inside
-  #                               'gray70', # below 0, total
-  #                               'lightblue' # below 0, inside
-  #                               ))+
   labs(y = "Mean-adjusted average N vessels / weekday",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
@@ -736,7 +729,7 @@ wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |>
                       group = npz_id
                       ),
                   color = "grey50",
-                  size = 0.1,
+                  size = 0.05,
                   show.legend = FALSE) +
   geom_line(data = wkly_means_ins |> 
                                filter(network == "Temperate East"),
@@ -748,14 +741,14 @@ wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |>
                       group = npz_id
                       ), 
                   color = "black",
-                  size = 0.1,
+                  size = 0.05,
                   show.legend = FALSE) +
   labs(y = "Mean-adjusted average N vessels / weekday",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
                nest_line = element_line(),
-               scales = "fixed") +
+               scales = "free_y") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
@@ -778,7 +771,7 @@ wkdy_plot_northwest <- ggplot(data = wkly_means_tot |>
                       group = npz_id
                       ),
                   color = "grey50",
-                  size = 0.1,
+                  size = 0.05,
                   show.legend = FALSE) +
   geom_line(data = wkly_means_ins |> 
                                filter(network == "Northwest"),
@@ -791,14 +784,14 @@ wkdy_plot_northwest <- ggplot(data = wkly_means_tot |>
                       group = npz_id
                       ), 
                   color = "black",
-                  size = 0.1,
+                  size = 0.05,
                   show.legend = FALSE) +
   labs(y = "",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
                nest_line = element_line(),
-               scales = "fixed") +
+               scales = "free_y") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
@@ -820,7 +813,7 @@ wkdy_plot_southwest <- ggplot(data = wkly_means_tot |>
                       group = npz_id
                       ),
                   color = "grey50",
-                  size = 0.1,
+                  size = 0.05,
                   show.legend = FALSE) +
   geom_line(data = wkly_means_ins |> 
                                filter(network == "South-west"),
@@ -833,14 +826,14 @@ wkdy_plot_southwest <- ggplot(data = wkly_means_tot |>
                       group = npz_id
                       ), 
                   color = "black",
-                  size = 0.1,
+                  size = 0.05,
                   show.legend = FALSE) +
   labs(y = "",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
                nest_line = element_line(),
-               scales = "fixed") +
+               scales = "free_y") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
