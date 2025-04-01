@@ -21,6 +21,7 @@ library(ggalt)
 library(ggdist)
 library(ggh4x) # nested faceting
 library(ggpubr) # additional options for publication plots
+library(suncalc) # sunrise & sunset calculations
 
 theme_set(theme_bw(
   base_size = 14
