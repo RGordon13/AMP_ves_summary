@@ -257,14 +257,15 @@ all_ves_by_npz <- all_sites_hp |>
 
 
 all_ves_long <- all_ves_by_site |>
-  pivot_longer(cols = -c(network, npz_id, Site_ID, Dep_ID, Dep, n_days), values_to = "Ves_counts", names_to = "Ves_behav") |>
+  pivot_longer(cols = -c(network, npz_id, Site_ID, Dep_ID, Dep, n_days), 
+               values_to = "Ves_counts", names_to = "Ves_behav") |>
   # relevel categorical values for plotting
   mutate(Ves_behav = fct(Ves_behav),
-         Ves_behav = fct_relevel(Ves_behav, c("Total_ves_dep","Total_inside_small", "Total_inside", "Inside_transit_small","Inside_maneuver_small", "Inside_transit","Inside_maneuver")),
+         Ves_behav = fct_relevel(Ves_behav, c("Total_ves_dep","Total_inside_small", "Total_inside", "Inside_transit_small","Inside_maneuver_small", "Inside_maneuver","Inside_transit")),
          network = fct(network),
          network = fct_relevel(network, c("Temperate East","Northwest"))) |>
   # add diverging counts where inside values are negative for plotting
-  mutate(ves_counts_diverge = ifelse(Ves_behav == "Total_inside" | Ves_behav == "Total_inside_small",Ves_counts*(-1),Ves_counts),
+  mutate(ves_counts_diverge = ifelse(Ves_behav == "Total_inside" | Ves_behav == "Inside_maneuver",Ves_counts*(-1),Ves_counts),
          npz_id = fct(npz_id),
          npz_id = fct_relevel(npz_id, c("CGMP","SIMP","DMP","NMP")))
 
@@ -288,7 +289,11 @@ all_ves_by_day <- all_sites_hp |>
          Inside_transit_small = Total_inside_small - Inside_maneuver_small)
 
 all_ves_by_day_noyr <- all_sites_hp |>
-  group_by(network, npz_id, Site_ID, Dep_ID, Dep, Date_week, Date_noyr) |>
+  group_by(network, npz_id, 
+           Site_ID,
+           Dep_ID, 
+           Dep,
+           Date_week, Date_noyr) |>
   summarise(n_hrs = n_distinct(Begin_Hour_loc),
             n_ves_hrs = sum(ifelse(ves_yn == "Y", 1, 0), na.rm = TRUE),
             Total_ves_dep = sum(Total_Vessels, na.rm = TRUE),
@@ -297,13 +302,28 @@ all_ves_by_day_noyr <- all_sites_hp |>
             Inside_maneuver = sum(man_inside, na.rm = TRUE),
             Inside_maneuver_small = sum(man_inside_small, na.rm = TRUE),
             # daily means
-            mean_total_ves = mean(Total_Vessels),
-            mean_ins_ves = mean(total_inside),
-            mean_ins_sm_ves = mean(total_inside_small)) |>
-  mutate(daily_ves_perhr = Total_ves_dep/n_hrs,
-         total_prophr = n_ves_hrs/n_hrs,
-         Inside_transit = Total_inside - Inside_maneuver,
-         Inside_transit_small = Total_inside_small - Inside_maneuver_small,
+            # mean_total_ves = mean(Total_Vessels),
+            # mean_ins_ves = mean(total_inside),
+            # mean_ins_sm_ves = mean(total_inside_small)
+            ) |>
+  filter(n_hrs > 23) |> # only include full days
+  ungroup() |>
+  # re-group to get counts pooled by NPZ
+  group_by(network, npz_id,
+           Dep_ID,
+           Date_week, Date_noyr) |>
+  summarise(n_hrs_tot = sum(n_hrs),
+            n_ves_hrs_tot = sum(n_ves_hrs, na.rm = TRUE),
+            Total_ves_npz = sum(Total_ves_dep, na.rm = TRUE),
+            Total_inside_npz = sum(Total_inside, na.rm = TRUE),
+            Total_inside_small_npz = sum(Total_inside_small, na.rm = TRUE),
+            Inside_maneuver_npz = sum(Inside_maneuver, na.rm = TRUE),
+            Inside_maneuver_small_npz = sum(Inside_maneuver_small, na.rm = TRUE)
+  ) |>
+  mutate(daily_ves_perhr = Total_ves_npz/n_hrs_tot*24, # ves/day = ves/hour * 24hr/day
+         total_prophr = n_ves_hrs_tot/n_hrs_tot,
+         Inside_transit_npz = Total_inside_npz - Inside_maneuver_npz,
+         Inside_transit_small_npz = Total_inside_small_npz - Inside_maneuver_small_npz,
          network = case_when(npz_id == "CGMP" | npz_id == "SIMP" ~ "Temperate East",
                              npz_id == "DMP" | npz_id == "NMP" ~ "Northwest", TRUE ~ "South-west"
          ),
@@ -318,34 +338,13 @@ all_ves_by_day_noyr <- all_sites_hp |>
 Visualizing overall vessel presence
 
 ```{r plots by npz}
-ggplot(data = all_ves_by_site,
-       aes(x = npz_id,
-           y = Total_ves_dep,
-           fill = npz_id)) +
-  geom_col(show.legend = FALSE,
-           position = position_identity()) +
-  scale_fill_viridis_d()+
-  facet_grid(~network, 
-             scales = "free_x", 
-             space = "free", 
-             drop = TRUE) +
-  labs(x = "NPZ",
-       y = "N vessels",
-       title = "Total vessel counts") +
-  facet_nested(cols = vars(network, npz_id, Dep_ID), 
-               nest_line = element_line(),
-               scales = "free_x") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
 
 # weekly plots for nominal year
 ggplot() +
-  geom_boxplot(data = all_ves_by_day_noyr |> filter(total_prophr > 0),
+  geom_boxplot(data = all_ves_by_day_noyr |> 
+                 filter(daily_ves_perhr > 0),
        aes(x = as_date(Date_noyr),
-           y = total_prophr, 
+           y = daily_ves_perhr, 
            group = as_date(Date_week),
            fill = network),
                show.legend = FALSE) + 
@@ -353,7 +352,7 @@ ggplot() +
             aes(xmin = as_date(Gap_start),
                 xmax = as_date(Gap_end),
                 ymin = 0,
-                ymax = 0.8),
+                ymax = 50),
             fill = "grey80",
             alpha = 0.7)+
   scale_x_date(date_breaks = "months", 
@@ -361,7 +360,7 @@ ggplot() +
 scale_fill_manual(values = c("Temperate East" = "#00AB8E",
                              "Northwest" = "#A05EB5",
                              "South-west" = "#485CC7"))+
-  labs(y = "N hours present /\nN total hours",
+  labs(y = "N vessels present / day",
        x = "Date")+
   facet_nested(rows = vars(network, npz_id), 
                nest_line = element_line(),
@@ -372,7 +371,7 @@ scale_fill_manual(values = c("Temperate East" = "#00AB8E",
     strip.text.y = element_text(face = "bold")
     )
 
-ggsave(paste0("figs/", "Total_boxplot_daily_prophr_1yr.png"), width=10, height=8,
+ggsave(paste0("figs/", "Total_boxplot_counts_perday_1yr.png"), width=10, height=8,
        units="in", dpi=300)
 
 ```
@@ -479,6 +478,53 @@ ins_out_table <- all_ves_long |>
          "Deployment" = "Dep")
 
 knitr::kable(ins_out_table, caption = "Vessel counts inside and outside NPZ boundaries")
+
+
+
+```
+
+### Diverging bar plot transit vs maneuver
+
+Similar to plot above but for transit vs. maneuver instead of inside vs. outside
+
+```{r div plot maneuvers}
+
+breakvals_trans <- seq(-100,50,25)
+ggplot(data = all_ves_long |> 
+         filter(Ves_behav == "Inside_transit" |
+               Ves_behav == "Inside_maneuver",
+               npz_id != "SWCMP",
+               npz_id != "MMP"),
+       aes(x = npz_id,
+           y = ves_counts_diverge,
+           fill = Ves_behav)) +
+  geom_col(position = position_stack()) +
+  coord_flip()+
+  scale_y_continuous(limits = c(-75, 50),
+                     breaks = breakvals_trans,
+                     labels = abs(breakvals_trans))+
+  scale_fill_manual(values = c("black","grey75"),
+                       labels = c("Maneuver" , "Transit"))+
+  labs(y = "N vessels",
+       fill = "Vessel Behavior\nInside NPZ",
+       title = "") +
+  facet_nested(rows = vars(network, npz_id, Dep_ID), 
+               nest_line = element_line(),
+               scales = "free_y",
+               switch = "y") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+  
+ggsave(paste0("figs/", "Transit_maneuver_counts_npz.png"), width=10, height=8,
+       units="in", dpi=300)
+
+
 
 
 
