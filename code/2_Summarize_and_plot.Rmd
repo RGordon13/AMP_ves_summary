@@ -525,11 +525,68 @@ ggplot(data = all_ves_long |>
 ggsave(paste0("figs/", "Transit_maneuver_counts_npz.png"), width=10, height=8,
        units="in", dpi=300)
 
+```
 
 
+## Try colors for diverging bar plots
+
+
+
+```{r div bar by npz colors}
+
+####
+# Diverging bar plot - NPZ (with colors!)
+#### 
+
+
+breakvals <- seq(-200, 800, 200)
+
+ggplot(data = all_ves_long |> 
+         filter(Ves_behav == "total_outside" |
+               Ves_behav == "Total_inside",
+               npz_id != "SWCMP"),
+       aes(x = npz_id,
+           y = ves_counts_diverge,
+           fill = network,
+           alpha = Ves_behav)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  guides(fill = "none")+ # take away fill legend but keep alpha legend
+  coord_flip()+
+  scale_y_continuous(limits = c(-200, 800),
+                     breaks = breakvals, 
+                     labels = abs(breakvals))+
+  scale_fill_manual(values = c("Temperate East" = "#00AB8E",
+                             "Northwest" = "#A05EB5",
+                             "South-west" = "#485CC7"))+
+  scale_alpha_manual(values = c(0.9,0.4),
+                       labels = c(">0.75" , "\u2264 0.75"))+
+  labs(y = "N vessels",
+       alpha = "Probability of vessel\nwithin NPZ",
+       title = "",
+       fill = NULL) +
+  facet_nested(rows = vars(network, npz_id, Dep_ID), 
+               nest_line = element_line(),
+               scales = "free_y",
+               switch = "y") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+  
+ggsave(paste0("figs/", "Ins_out_counts_npz_colors.png"), width=10, height=8,
+       units="in", dpi=300)
 
 
 ```
+
+
+
+
+
 
 
 
