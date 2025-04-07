@@ -22,6 +22,7 @@ library(ggdist)
 library(ggh4x) # nested faceting
 library(ggpubr) # additional options for publication plots
 library(suncalc) # sunrise & sunset calculations
+library(ggpattern)
 
 theme_set(theme_bw(
   base_size = 14
@@ -549,7 +550,9 @@ ggplot(data = all_ves_long |>
            y = ves_counts_diverge,
            fill = network,
            alpha = Ves_behav)) +
-  geom_col(position = position_stack(reverse = TRUE)) +
+  geom_col_pattern(aes(pattern_fill = Ves_behav),
+    position = position_stack(reverse = TRUE)
+                   ) +
   guides(fill = "none")+ # take away fill legend but keep alpha legend
   coord_flip()+
   scale_y_continuous(limits = c(-200, 800),
