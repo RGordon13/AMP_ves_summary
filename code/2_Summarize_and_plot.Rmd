@@ -120,7 +120,7 @@ Add in dates without coverage
 gaps <- data.frame("Gap_start" = c(as.POSIXct("2000-02-21",format="%Y-%m-%d"), #CGMP gap 1 start
                                    as.POSIXct("2000-08-05",format="%Y-%m-%d"), #CGMP gap 2 start
                                    as.POSIXct("2000-01-16",format="%Y-%m-%d"), #SIMP gap 1 start
-                                   as.POSIXct("2000-09-12",format="%Y-%m-%d"), #SIMP gap 2 start
+                                   as.POSIXct("2000-09-13",format="%Y-%m-%d"), #SIMP gap 2 start
                                    as.POSIXct("2000-01-01",format="%Y-%m-%d"), #DMP gap 1 start
                                    as.POSIXct("2000-11-05",format="%Y-%m-%d"), #DMP gap 2 start
                                    as.POSIXct("2000-01-01",format="%Y-%m-%d"), #NMP gap 1 start
@@ -178,13 +178,85 @@ gaps <- data.frame("Gap_start" = c(as.POSIXct("2000-02-21",format="%Y-%m-%d"), #
                               "TRMP"))
 
 
+dep_startend <- data.frame("dep_start" = c(as.POSIXct("2000-07-01",format="%Y-%m-%d"), #CGMP 201807 start
+                                   as.POSIXct("2000-12-12",format="%Y-%m-%d"), #CGMP 201812 first part
+                                   as.POSIXct("2000-01-01",format="%Y-%m-%d"), #CGMP 201812 second part
+                                   as.POSIXct("2000-04-11",format="%Y-%m-%d"), #CGMP 201904 start
+                                   as.POSIXct("2000-08-10",format="%Y-%m-%d"), #SIMP 201808 start
+                                   as.POSIXct("2000-12-12",format="%Y-%m-%d"), #SIMP 201812 first part
+                                   as.POSIXct("2000-01-01",format="%Y-%m-%d"), #SIMP 201812 second part
+                                   as.POSIXct("2000-06-10",format="%Y-%m-%d"), #SIMP 201906 start
+                                   as.POSIXct("2000-09-09",format="%Y-%m-%d"), #DMP start
+                                   as.POSIXct("2000-09-25",format="%Y-%m-%d"), #NMP start
+                                   as.POSIXct("2000-01-12",format="%Y-%m-%d"), #GMP start
+                                   as.POSIXct("2000-01-05",format="%Y-%m-%d"), #JMP start
+                                   as.POSIXct("2000-02-20",format="%Y-%m-%d"), #MMP start
+                                   as.POSIXct("2000-01-18",format="%Y-%m-%d"), #SWCMP start
+                                   as.POSIXct("2000-05-10",format="%Y-%m-%d") #TRMP start
+                                   ),
+                                    
+                   
+                   "dep_end" = c(as.POSIXct("2000-08-04",format="%Y-%m-%d"), #CGMP 201807 end
+                                   as.POSIXct("2000-12-31",format="%Y-%m-%d"), #CGMP 201812 first part
+                                   as.POSIXct("2000-02-20",format="%Y-%m-%d"), #CGMP 201812 second part
+                                   as.POSIXct("2000-06-24",format="%Y-%m-%d"), #CGMP 201904 end
+                                   as.POSIXct("2000-09-12",format="%Y-%m-%d"), #SIMP 201808 end
+                                   as.POSIXct("2000-12-31",format="%Y-%m-%d"), #SIMP 201812 first part
+                                   as.POSIXct("2000-01-15",format="%Y-%m-%d"), #SIMP 201812 second part
+                                   as.POSIXct("2000-08-09",format="%Y-%m-%d"), #SIMP 201906 end
+                                   as.POSIXct("2000-11-04",format="%Y-%m-%d"), #DMP end
+                                   as.POSIXct("2000-11-18",format="%Y-%m-%d"), #NMP end
+                                   as.POSIXct("2000-04-03",format="%Y-%m-%d"), #GMP end
+                                   as.POSIXct("2000-03-10",format="%Y-%m-%d"), #JMP end
+                                   as.POSIXct("2000-05-03",format="%Y-%m-%d"), #MMP end
+                                   as.POSIXct("2000-04-11",format="%Y-%m-%d"), #SWCMP end
+                                   as.POSIXct("2000-08-02",format="%Y-%m-%d") #TRMP end
+                                   ),
+                   
+                   "npz_id" = c("CGMP",
+                              "CGMP",
+                              "CGMP",
+                              "CGMP",
+                              "SIMP",
+                              "SIMP",
+                              "SIMP",
+                              "SIMP",
+                              "DMP",
+                              "NMP",
+                              "GMP",
+                              "JMP",
+                              "MMP",
+                              "SWCMP",
+                              "TRMP"),
+                   
+                   "Dep_ID" = c("201807",
+                              "201812",
+                              "201812",
+                              "201904",
+                              "201808",
+                              "201812",
+                              "201812",
+                              "201906",
+                              "202009",
+                              "201909",
+                              "202201",
+                              "202201",
+                              "202002",
+                              "202201",
+                              "202105"))
+
+
 gaps <- gaps |>
   mutate(network = case_when(npz_id == "CGMP" | npz_id == "SIMP" ~ "Temperate East",
                              npz_id == "DMP" | npz_id == "NMP" ~ "Northwest", TRUE ~ "South-west"
          ),
          network = factor(network, levels = c("Temperate East","Northwest","South-west")))
 
-
+dep_startend <- dep_startend |>
+  mutate(network = case_when(npz_id == "CGMP" | npz_id == "SIMP" ~ "Temperate East",
+                             npz_id == "DMP" | npz_id == "NMP" ~ "Northwest", TRUE ~ "South-west"
+         ),
+         network = factor(network, levels = c("Temperate East","Northwest","South-west")))
 
 gaps_wk <- gaps |>
   mutate(Gap_start = floor_date(Gap_start, "1 week"),
@@ -377,6 +449,45 @@ ggsave(paste0("figs/", "Total_boxplot_counts_perday_1yr.png"), width=10, height=
        units="in", dpi=300)
 
 ```
+
+### Dumbbell Plot for Overall Effort 
+
+``` {r dumbbell timeline} 
+
+ggplot() +
+  geom_segment(data = dep_startend,
+                aes(x = as_date(dep_start),
+                    xend = as_date(dep_end),
+                    y = factor(Dep_ID),
+                    color = network),
+                linewidth = 2) +
+  scale_color_manual(values = c("Temperate East" = "#00AB8E",
+                             "Northwest" = "#A05EB5",
+                             "South-west" = "#485CC7"))+
+  geom_rect(data = gaps,
+            aes(xmin = as_date(Gap_start),
+                xmax = as_date(Gap_end),
+                ymin = 0,
+                ymax = 4),
+            fill = "grey80",
+            alpha = 0.7)+
+  scale_x_date(date_breaks = "months", 
+               date_labels = "%b")+
+  facet_nested(rows = vars(network, npz_id), 
+               nest_line = element_line(),
+               scales = "free", 
+               space = "fixed",
+               switch = "y") +
+    theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+
+
+```
+
+
 
 
 ### Diverging bar plot by NPZ
