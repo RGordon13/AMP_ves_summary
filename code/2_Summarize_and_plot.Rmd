@@ -107,59 +107,65 @@ all_sites_hp <- all_sites_hp |>
 
 ```
 
-## Data gaps
+## Recording effort and gaps
 
-Add in dates without coverage 
+Add in gaps and dates with coverage 
 
-```{r data gaps, include=FALSE}
+```{r effort and gaps, include=FALSE}
 
 ##### Deployment info ###
 
 # create table of data gaps within nominal year (2000)
 
-gaps <- data.frame("Gap_start" = c(as.POSIXct("2000-02-21",format="%Y-%m-%d"), #CGMP gap 1 start
-                                   as.POSIXct("2000-08-05",format="%Y-%m-%d"), #CGMP gap 2 start
-                                   as.POSIXct("2000-01-16",format="%Y-%m-%d"), #SIMP gap 1 start
-                                   as.POSIXct("2000-09-13",format="%Y-%m-%d"), #SIMP gap 2 start
+gaps <- data.frame("Gap_start" = c(as.POSIXct("2000-02-20",format="%Y-%m-%d"), #CGMP gap 1 start
+                                   as.POSIXct("2000-08-04",format="%Y-%m-%d"), #CGMP gap 2 start
+                                   as.POSIXct("2000-06-24",format="%Y-%m-%d"), #CGMP gap 3 start
+                                   as.POSIXct("2000-01-15",format="%Y-%m-%d"), #SIMP gap 1 start
+                                   as.POSIXct("2000-09-12",format="%Y-%m-%d"), #SIMP gap 2 start
+                                   as.POSIXct("2000-08-09",format="%Y-%m-%d"), #SIMP gap 3 start
                                    as.POSIXct("2000-01-01",format="%Y-%m-%d"), #DMP gap 1 start
-                                   as.POSIXct("2000-11-05",format="%Y-%m-%d"), #DMP gap 2 start
+                                   as.POSIXct("2000-11-04",format="%Y-%m-%d"), #DMP gap 2 start
                                    as.POSIXct("2000-01-01",format="%Y-%m-%d"), #NMP gap 1 start
-                                   as.POSIXct("2000-11-19",format="%Y-%m-%d"), #NMP gap 2 start
+                                   as.POSIXct("2000-11-18",format="%Y-%m-%d"), #NMP gap 2 start
                                    as.POSIXct("2000-01-01",format="%Y-%m-%d"), #GMP gap 1 start
-                                   as.POSIXct("2000-04-04",format="%Y-%m-%d"), #GMP gap 2 start
+                                   as.POSIXct("2000-04-03",format="%Y-%m-%d"), #GMP gap 2 start
                                    as.POSIXct("2000-01-01",format="%Y-%m-%d"), #JMP gap 1 start
-                                   as.POSIXct("2000-03-11",format="%Y-%m-%d"), #JMP gap 2 start
+                                   as.POSIXct("2000-03-10",format="%Y-%m-%d"), #JMP gap 2 start
                                    as.POSIXct("2000-01-01",format="%Y-%m-%d"), #MMP gap 1 start
-                                   as.POSIXct("2000-05-04",format="%Y-%m-%d"), #MMP gap 2 start
+                                   as.POSIXct("2000-05-03",format="%Y-%m-%d"), #MMP gap 2 start
                                    as.POSIXct("2000-01-01",format="%Y-%m-%d"), #SWCMP gap 1 start
-                                   as.POSIXct("2000-04-12",format="%Y-%m-%d"), #SWCMP gap 2 start
+                                   as.POSIXct("2000-04-11",format="%Y-%m-%d"), #SWCMP gap 2 start
                                    as.POSIXct("2000-01-01",format="%Y-%m-%d"), #TRMP gap 1 start
-                                   as.POSIXct("2000-08-03",format="%Y-%m-%d") #TRMP gap 2 start
+                                   as.POSIXct("2000-08-02",format="%Y-%m-%d") #TRMP gap 2 start
                                    ),
                                     
                    
-                   "Gap_end" = c(as.POSIXct("2000-04-10",format="%Y-%m-%d"), #CGMP gap 1 end
-                                   as.POSIXct("2000-12-11",format="%Y-%m-%d"), #CGMP gap 2 end
-                                   as.POSIXct("2000-06-09",format="%Y-%m-%d"), #SIMP gap 1 end
-                                   as.POSIXct("2000-12-11",format="%Y-%m-%d"), #SIMP gap 2 end
-                                   as.POSIXct("2000-09-08",format="%Y-%m-%d"), #DMP gap 1 end
+                   "Gap_end" = c(as.POSIXct("2000-04-11",format="%Y-%m-%d"), #CGMP gap 1 end
+                                   as.POSIXct("2000-12-12",format="%Y-%m-%d"), #CGMP gap 2 end
+                                 as.POSIXct("2000-07-01",format="%Y-%m-%d"), #CGMP gap 3 end
+                                   as.POSIXct("2000-06-10",format="%Y-%m-%d"), #SIMP gap 1 end
+                                   as.POSIXct("2000-12-12",format="%Y-%m-%d"), #SIMP gap 2 end
+                                 as.POSIXct("2000-08-10",format="%Y-%m-%d"), #SIMP gap 3 end
+                                   as.POSIXct("2000-09-09",format="%Y-%m-%d"), #DMP gap 1 end
                                    as.POSIXct("2000-12-31",format="%Y-%m-%d"), #DMP gap 2 end
-                                   as.POSIXct("2000-09-24",format="%Y-%m-%d"), #NMP gap 1 end
+                                   as.POSIXct("2000-09-25",format="%Y-%m-%d"), #NMP gap 1 end
                                    as.POSIXct("2000-12-31",format="%Y-%m-%d"), #NMP gap 2 end
                                    as.POSIXct("2000-01-12",format="%Y-%m-%d"), #GMP gap 1 end
                                    as.POSIXct("2000-12-31",format="%Y-%m-%d"), #GMP gap 2 end
-                                   as.POSIXct("2000-01-04",format="%Y-%m-%d"), #JMP gap 1 end
+                                   as.POSIXct("2000-01-05",format="%Y-%m-%d"), #JMP gap 1 end
                                    as.POSIXct("2000-12-31",format="%Y-%m-%d"), #JMP gap 2 end
-                                   as.POSIXct("2000-02-07",format="%Y-%m-%d"), #MMP gap 1 end
+                                   as.POSIXct("2000-02-08",format="%Y-%m-%d"), #MMP gap 1 end
                                    as.POSIXct("2000-12-31",format="%Y-%m-%d"), #MMP gap 2 end
-                                   as.POSIXct("2000-01-07",format="%Y-%m-%d"), #SWCMP gap 1 end
+                                   as.POSIXct("2000-01-18",format="%Y-%m-%d"), #SWCMP gap 1 end
                                    as.POSIXct("2000-12-31",format="%Y-%m-%d"), #SWCMP gap 2 end
-                                   as.POSIXct("2000-05-09",format="%Y-%m-%d"), #TRMP gap 1 end
+                                   as.POSIXct("2000-05-10",format="%Y-%m-%d"), #TRMP gap 1 end
                                    as.POSIXct("2000-12-31",format="%Y-%m-%d") #TRMP gap 2 end
                                  ),
                    
                    "npz_id" = c("CGMP",
                               "CGMP",
+                              "CGMP",
+                              "SIMP",
                               "SIMP",
                               "SIMP",
                               "DMP",
@@ -190,7 +196,7 @@ dep_startend <- data.frame("dep_start" = c(as.POSIXct("2000-07-01",format="%Y-%m
                                    as.POSIXct("2000-09-25",format="%Y-%m-%d"), #NMP start
                                    as.POSIXct("2000-01-12",format="%Y-%m-%d"), #GMP start
                                    as.POSIXct("2000-01-05",format="%Y-%m-%d"), #JMP start
-                                   as.POSIXct("2000-02-20",format="%Y-%m-%d"), #MMP start
+                                   as.POSIXct("2000-02-08",format="%Y-%m-%d"), #MMP start
                                    as.POSIXct("2000-01-18",format="%Y-%m-%d"), #SWCMP start
                                    as.POSIXct("2000-05-10",format="%Y-%m-%d") #TRMP start
                                    ),
@@ -263,6 +269,7 @@ gaps_wk <- gaps |>
          Gap_end = floor_date(Gap_end, "1 week"))
 
 ```
+
 
 ## Data summary and visualization
 
@@ -444,7 +451,9 @@ scale_fill_manual(values = c("Temperate East" = "#00AB8E",
     strip.background = element_blank(),
     strip.text.y = element_text(face = "bold")
     )
+```
 
+```{r save total boxplot}
 ggsave(paste0("figs/", "Total_boxplot_counts_perday_1yr.png"), width=10, height=8,
        units="in", dpi=300)
 
@@ -458,9 +467,9 @@ ggplot() +
   geom_segment(data = dep_startend,
                 aes(x = as_date(dep_start),
                     xend = as_date(dep_end),
-                    y = factor(Dep_ID),
+                    y = 1.5,
                     color = network),
-                linewidth = 2) +
+                linewidth = 4) +
   scale_color_manual(values = c("Temperate East" = "#00AB8E",
                              "Northwest" = "#A05EB5",
                              "South-west" = "#485CC7"))+
@@ -468,11 +477,15 @@ ggplot() +
             aes(xmin = as_date(Gap_start),
                 xmax = as_date(Gap_end),
                 ymin = 0,
-                ymax = 4),
+                ymax = 3),
             fill = "grey80",
-            alpha = 0.7)+
+            alpha = 0.8)+
   scale_x_date(date_breaks = "months", 
-               date_labels = "%b")+
+               date_labels = "%b",
+               expand = c(0,0))+
+  labs(x = "Date", 
+       y = "",
+       color = "Regional Network")+
   facet_nested(rows = vars(network, npz_id), 
                nest_line = element_line(),
                scales = "free", 
@@ -481,9 +494,16 @@ ggplot() +
     theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
+    strip.text.y = element_text(face = "bold"),
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank()
     )
 
+```
+
+```{r save effort plot}
+ggsave(paste0("figs/", "Total_recording_effort_1yr.png"), width=12, height=8,
+       units="in", dpi=300)
 
 ```
 
@@ -659,12 +679,15 @@ ggplot(data = all_ves_long |>
                npz_id != "SWCMP"),
        aes(x = npz_id,
            y = ves_counts_diverge,
-           fill = network,
-           alpha = Ves_behav)) +
-  geom_col_pattern(aes(pattern_fill = Ves_behav),
-    position = position_stack(reverse = TRUE)
+           fill = network)) +
+  geom_col_pattern(aes(pattern = Ves_behav),
+    position = position_stack(reverse = TRUE),
+    pattern_density = 0.2,
+    pattern_fill = "black",
+    pattern_colour = NA,
+    show.legend = FALSE
                    ) +
-  guides(fill = "none")+ # take away fill legend but keep alpha legend
+  guides(fill = "none", alpha = "none")+ # take away fill legend but keep alpha legend
   coord_flip()+
   scale_y_continuous(limits = c(-200, 800),
                      breaks = breakvals, 
@@ -672,10 +695,15 @@ ggplot(data = all_ves_long |>
   scale_fill_manual(values = c("Temperate East" = "#00AB8E",
                              "Northwest" = "#A05EB5",
                              "South-west" = "#485CC7"))+
+  # scale_color_manual(values = c("Temperate East" = "#00AB8E",
+  #                            "Northwest" = "#A05EB5",
+  #                            "South-west" = "#485CC7"))+
   scale_alpha_manual(values = c(0.9,0.4),
-                       labels = c(">0.75" , "\u2264 0.75"))+
+                       labels = c("Inside" , "Outside"))+
+  scale_pattern_manual(values = c("total_outside" = "none", "Total_inside" = "stripe"), 
+                       label = c("Inside", "Outside"))+
   labs(y = "N vessels",
-       alpha = "Probability of vessel\nwithin NPZ",
+       # alpha = "Estimated vessel location",
        title = "",
        fill = NULL) +
   facet_nested(rows = vars(network, npz_id, Dep_ID), 
@@ -691,7 +719,7 @@ ggplot(data = all_ves_long |>
     strip.text.y = element_text(face = "bold")
     )
   
-ggsave(paste0("figs/", "Ins_out_counts_npz_colors.png"), width=10, height=8,
+ggsave(paste0("figs/", "Ins_out_counts_npz_colors_stripes.png"), width=10, height=8,
        units="in", dpi=300)
 
 
