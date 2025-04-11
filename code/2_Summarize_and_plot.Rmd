@@ -961,7 +961,7 @@ wkly_means_ins_small <- all_ves_wkdy |>
 
 ### Plot mean-adjusted weekday counts -- bar plot
 
-```{r line-plot weekly mean adj, echo=FALSE}
+```{r bar-plot weekly mean adj, echo=FALSE}
 
 #### Plotting total & inside on same plots
 
@@ -980,17 +980,22 @@ ggplot(data = wkly_means_tot,
                   color = "grey50",
                   size = 0.1,
                   show.legend = FALSE) +
-  geom_line(data = wkly_means_ins,
-       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
-       color = "black")+
+  geom_col(data = wkly_means_ins,
+           aes(x = Weekday, 
+               y = mean_wkdy_adj,
+               fill = ifelse(mean_wkdy_adj >= 0, 'over','under')
+           )
+           )+
   geom_pointrange(data = wkly_means_ins,
                   aes(ymin = sd_lower,
                       ymax = sd_upper,
-                      group = npz_id
-                      ), 
-                  color = "black",
+                      group = npz_id),
+                  color = "black",                
                   size = 0.1,
-                  show.legend = FALSE) +
+                  show.legend = FALSE
+                  )+
+  scale_fill_manual(values = c("over" = "firebrick", 
+                               "under" = "darkblue"))+
   labs(y = "Mean-adjusted average N vessels / weekday",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
@@ -1011,7 +1016,7 @@ ggsave(paste0("figs/", "Weekday_mean_adj_combined_total_ins.png"), width=5, heig
 # Use ggarrange to make multipanel plot
 wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |> 
                                filter(network == "Temperate East"),
-       aes(x = Weekday, y = mean_wkdy_adj)) +
+                             aes(x = Weekday, y = mean_wkdy_adj)) +
   geom_hline(yintercept = 0, 
              linetype = 3, # dotted line
              colour = "black") +
@@ -1020,40 +1025,53 @@ wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |>
   geom_pointrange(aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id
-                      ),
-                  color = "grey50",
-                  size = 0.05,
-                  show.legend = FALSE) +
-  geom_line(data = wkly_means_ins |> 
-                               filter(network == "Temperate East"),
-       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
-       color = "black")+
+  ),
+  color = "grey50",
+  size = 0.05,
+  show.legend = FALSE) +
+  # bars for inside vessels
+  geom_col(data = wkly_means_ins |> 
+             filter(network == "Temperate East"),
+           aes(x = Weekday, 
+               y = mean_wkdy_adj,
+               # conditional fill based on lower SD value
+               # "if mean +/- SD is above 0, 'over'
+               fill = ifelse(sd_lower >= 0, 'over',
+                             ifelse(sd_upper <=0, 'under', 'center'))
+           ),
+           show.legend = FALSE
+  )+
   geom_pointrange(data = wkly_means_ins |> 
-                               filter(network == "Temperate East"), aes(ymin = sd_lower,
+                    filter(network == "Temperate East"), 
+                  aes(ymin = sd_lower,
                       ymax = sd_upper,
-                      group = npz_id
-                      ), 
-                  color = "black",
-                  size = 0.05,
-                  show.legend = FALSE) +
+                      group = npz_id),
+                  color = "black",                
+                  size = 0.1,
+                  show.legend = FALSE
+  )+
+  # assign specific colors to values over/under mean
+  scale_fill_manual(values = c("over" = "firebrick", 
+                               "under" = "darkblue",
+                               "center" = "grey75"))+
   labs(y = "Mean-adjusted average N vessels / weekday",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
                nest_line = element_line(),
-               scales = "free_y") +
+               scales = "fixed") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
     strip.text.y = element_text(face = "bold"),
     plot.margin = margin(t = 20, b = 5.5, l = 5.5)
-    )
+  )
 
 
 
 wkdy_plot_northwest <- ggplot(data = wkly_means_tot |> 
                                filter(network == "Northwest"),
-       aes(x = Weekday, y = mean_wkdy_adj)) +
+                             aes(x = Weekday, y = mean_wkdy_adj)) +
   geom_hline(yintercept = 0, 
              linetype = 3, # dotted line
              colour = "black") +
@@ -1062,29 +1080,41 @@ wkdy_plot_northwest <- ggplot(data = wkly_means_tot |>
   geom_pointrange(aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id
-                      ),
-                  color = "grey50",
-                  size = 0.05,
-                  show.legend = FALSE) +
-  geom_line(data = wkly_means_ins |> 
-                               filter(network == "Northwest"),
-       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
-       color = "black")+
+  ),
+  color = "grey50",
+  size = 0.05,
+  show.legend = FALSE) +
+  # bars for inside vessels
+  geom_col(data = wkly_means_ins |> 
+             filter(network == "Northwest"),
+           aes(x = Weekday, 
+               y = mean_wkdy_adj,
+               # conditional fill based on lower SD value
+               # "if mean +/- SD is above 0, 'over'
+               fill = ifelse(sd_lower >= 0, 'over',
+                             ifelse(sd_upper <=0, 'under', 'center'))
+           ),
+           show.legend = FALSE
+  )+
   geom_pointrange(data = wkly_means_ins |> 
-                               filter(network == "Northwest"),
+                    filter(network == "Northwest"), 
                   aes(ymin = sd_lower,
                       ymax = sd_upper,
-                      group = npz_id
-                      ), 
-                  color = "black",
-                  size = 0.05,
-                  show.legend = FALSE) +
-  labs(y = "",
+                      group = npz_id),
+                  color = "black",                
+                  size = 0.1,
+                  show.legend = FALSE
+  )+
+  # assign specific colors to values over/under mean
+  scale_fill_manual(values = c("over" = "firebrick", 
+                               "under" = "darkblue",
+                               "center" = "grey75"))+
+  labs(y = "Mean-adjusted average N vessels / weekday",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
                nest_line = element_line(),
-               scales = "free_y") +
+               scales = "fixed") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
@@ -1108,25 +1138,37 @@ wkdy_plot_southwest <- ggplot(data = wkly_means_tot |>
                   color = "grey50",
                   size = 0.05,
                   show.legend = FALSE) +
-  geom_line(data = wkly_means_ins |> 
-                               filter(network == "South-west"),
-       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
-       color = "black")+
+  # bars for inside vessels
+  geom_col(data = wkly_means_ins |> 
+             filter(network == "South-west"),
+           aes(x = Weekday, 
+               y = mean_wkdy_adj,
+               # conditional fill based on lower SD value
+               # "if mean +/- SD is above 0, 'over'
+               fill = ifelse(sd_lower >= 0, 'over',
+                             ifelse(sd_upper <=0, 'under', 'center'))
+           ),
+           show.legend = FALSE
+  )+
   geom_pointrange(data = wkly_means_ins |> 
-                               filter(network == "South-west"),
+                    filter(network == "South-west"), 
                   aes(ymin = sd_lower,
                       ymax = sd_upper,
-                      group = npz_id
-                      ), 
-                  color = "black",
-                  size = 0.05,
-                  show.legend = FALSE) +
-  labs(y = "",
+                      group = npz_id),
+                  color = "black",                
+                  size = 0.1,
+                  show.legend = FALSE
+  )+
+  # assign specific colors to values over/under mean
+  scale_fill_manual(values = c("over" = "firebrick", 
+                               "under" = "darkblue",
+                               "center" = "grey75"))+
+  labs(y = "Mean-adjusted average N vessels / weekday",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
                nest_line = element_line(),
-               scales = "free_y") +
+               scales = "fixed") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
@@ -1140,7 +1182,7 @@ ggarrange(wkdy_plot_tempeast, wkdy_plot_northwest, wkdy_plot_southwest,
           labels = c("Temperate East","Northwest","South-west"),
           vjust=1.25)
 
-ggsave(paste0("figs/", "Weekday_mean_adj_horiz_panels.png"), width=12, height=8, units="in", dpi=300)
+ggsave(paste0("figs/", "Weekday_mean_adj_horiz_panels_bars.png"), width=12, height=8, units="in", dpi=300)
 
 
 
