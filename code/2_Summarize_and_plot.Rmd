@@ -22,6 +22,7 @@ library(ggdist)
 library(ggh4x) # nested faceting
 library(ggpubr) # additional options for publication plots
 library(suncalc) # sunrise & sunset calculations
+library(geosphere) 
 library(ggpattern)
 
 theme_set(theme_bw(
@@ -114,6 +115,9 @@ Add in gaps and dates with coverage
 ```{r effort and gaps, include=FALSE}
 
 ##### Deployment info ###
+
+depinfo <- read_csv("data/AMP_deployment_info.csv")
+
 
 # create table of data gaps within nominal year (2000)
 
@@ -520,97 +524,97 @@ Of vessels suitable for propagation analysis, what proportion are estimated to o
 # Diverging bar plot - NPZ
 #### 
 
-
-breakvals <- seq(-200, 800, 200)
-
-ggplot(data = all_ves_long |> 
-         filter(Ves_behav == "total_outside" |
-               Ves_behav == "Total_inside",
-               npz_id != "SWCMP"),
-       aes(x = npz_id,
-           y = ves_counts_diverge,
-           fill = Ves_behav)) +
-  geom_col(position = position_stack(reverse = TRUE)) +
-  coord_flip()+
-  scale_y_continuous(limits = c(-200, 800),
-                     breaks = breakvals, 
-                     labels = abs(breakvals))+
-  scale_fill_manual(values = c("black","grey75"),
-                       labels = c(">0.75" , "\u2264 0.75"))+
-  labs(y = "N vessels",
-       fill = "Probability of vessel\nwithin NPZ",
-       title = "") +
-  facet_nested(rows = vars(network, npz_id, Dep_ID), 
-               nest_line = element_line(),
-               scales = "free_y",
-               switch = "y") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    axis.title.y = element_blank(),
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
-  
-ggsave(paste0("figs/", "Ins_out_counts_npz.png"), width=10, height=8,
-       units="in", dpi=300)
-
-# Small vessels inside-outside
-
-breakvals_small <- seq(-600, 600, 200)
-
-ggplot(data = all_ves_long |> 
-         filter(Ves_behav == "total_out_small" |
-               Ves_behav == "Total_inside_small",
-               npz_id != "SWCMP"),
-       aes(x = npz_id,
-           y = ves_counts_diverge,
-           fill = Ves_behav)) +
-  geom_col(position = position_stack(reverse = TRUE)) +
-  coord_flip()+
-  scale_y_continuous(limits = c(-600, 600),
-                     breaks = breakvals_small, 
-                     labels = abs(breakvals_small))+
-  scale_fill_viridis_d(direction = -1)+
-  labs(y = "N vessels",
-       fill = "Inside vs. Outside",
-       title = "Inside-Outside Counts (Small Vessels)") +
-   facet_nested(rows = vars(network, npz_id, Dep_ID), 
-               nest_line = element_line(),
-               scales = "free_y",
-               switch = "y") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    axis.title.y = element_blank(),
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
-
-ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=8,
-       units="in", dpi=300)
-
-
-# make table of inside vs. outside
-ins_out_table <- all_ves_long |> 
-  filter(Ves_behav == "total_outside" |
-           Ves_behav == "Total_inside"| 
-           Ves_behav == "total_out_small" |
-           Ves_behav == "Total_inside_small",
-         npz_id != "SWCMP") |>
-  pivot_wider(names_from = Ves_behav, 
-              id_cols = Dep, 
-              values_from = Ves_counts) |>
-  relocate(total_outside, .after = Total_inside) |>
-  rename("Total inside" = "Total_inside",
-         "Total inside (small)" = "Total_inside_small",
-         "Total outside" = "total_outside",
-         "Total outside (small)" = "total_out_small",
-         "Deployment" = "Dep")
-
-knitr::kable(ins_out_table, caption = "Vessel counts inside and outside NPZ boundaries")
+# 
+# breakvals <- seq(-200, 800, 200)
+# 
+# ggplot(data = all_ves_long |> 
+#          filter(Ves_behav == "total_outside" |
+#                Ves_behav == "Total_inside",
+#                npz_id != "SWCMP"),
+#        aes(x = npz_id,
+#            y = ves_counts_diverge,
+#            fill = Ves_behav)) +
+#   geom_col(position = position_stack(reverse = TRUE)) +
+#   coord_flip()+
+#   scale_y_continuous(limits = c(-200, 800),
+#                      breaks = breakvals, 
+#                      labels = abs(breakvals))+
+#   scale_fill_manual(values = c("black","grey75"),
+#                        labels = c(">0.75" , "\u2264 0.75"))+
+#   labs(y = "N vessels",
+#        fill = "Probability of vessel\nwithin NPZ",
+#        title = "") +
+#   facet_nested(rows = vars(network, npz_id, Dep_ID), 
+#                nest_line = element_line(),
+#                scales = "free_y",
+#                switch = "y") +
+#   theme(
+#     axis.text.x = element_text(face = "bold"),
+#     axis.title.y = element_blank(),
+#     axis.text.y = element_blank(),
+#     axis.ticks.y = element_blank(),
+#     strip.background = element_blank(),
+#     strip.text.y = element_text(face = "bold")
+#     )
+#   
+# ggsave(paste0("figs/", "Ins_out_counts_npz.png"), width=10, height=8,
+#        units="in", dpi=300)
+# 
+# # Small vessels inside-outside
+# 
+# breakvals_small <- seq(-600, 600, 200)
+# 
+# ggplot(data = all_ves_long |> 
+#          filter(Ves_behav == "total_out_small" |
+#                Ves_behav == "Total_inside_small",
+#                npz_id != "SWCMP"),
+#        aes(x = npz_id,
+#            y = ves_counts_diverge,
+#            fill = Ves_behav)) +
+#   geom_col(position = position_stack(reverse = TRUE)) +
+#   coord_flip()+
+#   scale_y_continuous(limits = c(-600, 600),
+#                      breaks = breakvals_small, 
+#                      labels = abs(breakvals_small))+
+#   scale_fill_viridis_d(direction = -1)+
+#   labs(y = "N vessels",
+#        fill = "Inside vs. Outside",
+#        title = "Inside-Outside Counts (Small Vessels)") +
+#    facet_nested(rows = vars(network, npz_id, Dep_ID), 
+#                nest_line = element_line(),
+#                scales = "free_y",
+#                switch = "y") +
+#   theme(
+#     axis.text.x = element_text(face = "bold"),
+#     axis.title.y = element_blank(),
+#     axis.text.y = element_blank(),
+#     axis.ticks.y = element_blank(),
+#     strip.background = element_blank(),
+#     strip.text.y = element_text(face = "bold")
+#     )
+# 
+# ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=8,
+#        units="in", dpi=300)
+# 
+# 
+# # make table of inside vs. outside
+# ins_out_table <- all_ves_long |> 
+#   filter(Ves_behav == "total_outside" |
+#            Ves_behav == "Total_inside"| 
+#            Ves_behav == "total_out_small" |
+#            Ves_behav == "Total_inside_small",
+#          npz_id != "SWCMP") |>
+#   pivot_wider(names_from = Ves_behav, 
+#               id_cols = Dep, 
+#               values_from = Ves_counts) |>
+#   relocate(total_outside, .after = Total_inside) |>
+#   rename("Total inside" = "Total_inside",
+#          "Total inside (small)" = "Total_inside_small",
+#          "Total outside" = "total_outside",
+#          "Total outside (small)" = "total_out_small",
+#          "Deployment" = "Dep")
+# 
+# knitr::kable(ins_out_table, caption = "Vessel counts inside and outside NPZ boundaries")
 
 
 
@@ -621,41 +625,41 @@ knitr::kable(ins_out_table, caption = "Vessel counts inside and outside NPZ boun
 Similar to plot above but for transit vs. maneuver instead of inside vs. outside
 
 ```{r div plot maneuvers}
-
-breakvals_trans <- seq(-100,50,25)
-ggplot(data = all_ves_long |> 
-         filter(Ves_behav == "Inside_transit" |
-               Ves_behav == "Inside_maneuver",
-               npz_id != "SWCMP",
-               npz_id != "MMP"),
-       aes(x = npz_id,
-           y = ves_counts_diverge,
-           fill = Ves_behav)) +
-  geom_col(position = position_stack()) +
-  coord_flip()+
-  scale_y_continuous(limits = c(-75, 50),
-                     breaks = breakvals_trans,
-                     labels = abs(breakvals_trans))+
-  scale_fill_manual(values = c("black","grey75"),
-                       labels = c("Maneuver" , "Transit"))+
-  labs(y = "N vessels",
-       fill = "Vessel Behavior\nInside NPZ",
-       title = "") +
-  facet_nested(rows = vars(network, npz_id, Dep_ID), 
-               nest_line = element_line(),
-               scales = "free_y",
-               switch = "y") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    axis.title.y = element_blank(),
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
-  
-ggsave(paste0("figs/", "Transit_maneuver_counts_npz.png"), width=10, height=8,
-       units="in", dpi=300)
+# 
+# breakvals_trans <- seq(-100,50,25)
+# ggplot(data = all_ves_long |> 
+#          filter(Ves_behav == "Inside_transit" |
+#                Ves_behav == "Inside_maneuver",
+#                npz_id != "SWCMP",
+#                npz_id != "MMP"),
+#        aes(x = npz_id,
+#            y = ves_counts_diverge,
+#            fill = Ves_behav)) +
+#   geom_col(position = position_stack()) +
+#   coord_flip()+
+#   scale_y_continuous(limits = c(-75, 50),
+#                      breaks = breakvals_trans,
+#                      labels = abs(breakvals_trans))+
+#   scale_fill_manual(values = c("black","grey75"),
+#                        labels = c("Maneuver" , "Transit"))+
+#   labs(y = "N vessels",
+#        fill = "Vessel Behavior\nInside NPZ",
+#        title = "") +
+#   facet_nested(rows = vars(network, npz_id, Dep_ID), 
+#                nest_line = element_line(),
+#                scales = "free_y",
+#                switch = "y") +
+#   theme(
+#     axis.text.x = element_text(face = "bold"),
+#     axis.title.y = element_blank(),
+#     axis.text.y = element_blank(),
+#     axis.ticks.y = element_blank(),
+#     strip.background = element_blank(),
+#     strip.text.y = element_text(face = "bold")
+#     )
+#   
+# ggsave(paste0("figs/", "Transit_maneuver_counts_npz.png"), width=10, height=8,
+#        units="in", dpi=300)
 
 ```
 
@@ -673,16 +677,25 @@ ggsave(paste0("figs/", "Transit_maneuver_counts_npz.png"), width=10, height=8,
 
 breakvals <- seq(-200, 800, 200)
 
-ggplot(data = all_ves_long |> 
+ggplot() +
+  geom_col(data = all_ves_long |> 
          filter(Ves_behav == "total_outside" |
                Ves_behav == "Total_inside",
                npz_id != "SWCMP"),
-       aes(x = npz_id,
+        aes(x = npz_id,
            y = ves_counts_diverge,
-           fill = network)) +
-  geom_col_pattern(aes(pattern = Ves_behav),
+           fill = network),
+         position = position_stack(reverse = TRUE),
+        show.legend = FALSE
+         )+
+  geom_col_pattern(data = all_ves_long |> 
+         filter(Ves_behav == "Total_inside",
+               npz_id != "SWCMP"),
+         aes(x = npz_id,
+           y = ves_counts_diverge),
     position = position_stack(reverse = TRUE),
     pattern_density = 0.2,
+    fill = NA,
     pattern_fill = "black",
     pattern_colour = NA,
     show.legend = FALSE
@@ -700,8 +713,8 @@ ggplot(data = all_ves_long |>
   #                            "South-west" = "#485CC7"))+
   scale_alpha_manual(values = c(0.9,0.4),
                        labels = c("Inside" , "Outside"))+
-  scale_pattern_manual(values = c("total_outside" = "none", "Total_inside" = "stripe"), 
-                       label = c("Inside", "Outside"))+
+  # scale_pattern_manual(values = c("total_outside" = "none", "Total_inside" = "stripe"), 
+                       # label = c("Inside", "Outside"))+
   labs(y = "N vessels",
        # alpha = "Estimated vessel location",
        title = "",
@@ -718,14 +731,73 @@ ggplot(data = all_ves_long |>
     strip.background = element_blank(),
     strip.text.y = element_text(face = "bold")
     )
-  
+```
+
+```{r save pattern fig}
 ggsave(paste0("figs/", "Ins_out_counts_npz_colors_stripes.png"), width=10, height=8,
        units="in", dpi=300)
-
 
 ```
 
 
+### Diverging bar plot with colors -- transit vs maneuver
+
+Similar to plot above but for transit vs. maneuver instead of inside vs. outside
+
+```{r div plot maneuvers colors}
+
+breakvals_trans <- seq(-100,50,25)
+ggplot(data = all_ves_long |>
+         filter(Ves_behav == "Inside_transit" |
+               Ves_behav == "Inside_maneuver",
+               npz_id != "SWCMP",
+               npz_id != "MMP")) +
+  geom_col(aes(x = npz_id,
+           y = ves_counts_diverge,
+           alpha = Ves_behav,
+           fill = network),
+           position = position_stack(),
+           show.legend = FALSE) +
+  geom_col_pattern(aes(x = npz_id,
+           y = ves_counts_diverge), 
+           position = position_stack(),
+                   pattern_density = 0.1,
+    fill = NA,
+    pattern_fill = "black",
+    pattern_colour = NA,
+    show.legend = FALSE)+
+  coord_flip()+
+  scale_y_continuous(limits = c(-75, 50),
+                     breaks = breakvals_trans,
+                     labels = abs(breakvals_trans))+
+   scale_fill_manual(values = c("Temperate East" = "#00AB8E",
+                             "Northwest" = "#A05EB5",
+                             "South-west" = "#485CC7"))+
+  scale_alpha_manual(values = c(0.9, 0.3), labels = c("Maneuver","Transit"))+
+  labs(y = "N vessels",
+       alpha = "Vessel Behavior",
+       title = "",
+       fill = NULL) +
+  facet_nested(rows = vars(network, npz_id, Dep_ID),
+               nest_line = element_line(),
+               scales = "free_y",
+               switch = "y") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+```
+
+
+```{r save trans-man plot}
+ggsave(paste0("figs/", "Transit_maneuver_counts_color_stripes_npz.png"), width=10, height=8,
+       units="in", dpi=300)
+
+```
 
 
 
@@ -884,9 +956,294 @@ wkly_means_ins_small <- all_ves_wkdy |>
 
 
 
-### Plot mean-adjusted weekday counts
 
-```{r plot weekly mean adj, echo=FALSE}
+
+
+### Plot mean-adjusted weekday counts -- bar plot
+
+```{r line-plot weekly mean adj, echo=FALSE}
+
+#### Plotting total & inside on same plots
+
+ggplot(data = wkly_means_tot,
+       aes(x = Weekday, y = mean_wkdy_adj)) +
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  geom_line(aes(group = Dep_ID),
+            color = "grey50")+
+  geom_pointrange(aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id
+                      # color = ifelse(sd_lower <= 0, 'gray70','black')
+                      ),
+                  color = "grey50",
+                  size = 0.1,
+                  show.legend = FALSE) +
+  geom_line(data = wkly_means_ins,
+       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
+       color = "black")+
+  geom_pointrange(data = wkly_means_ins,
+                  aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id
+                      ), 
+                  color = "black",
+                  size = 0.1,
+                  show.legend = FALSE) +
+  labs(y = "Mean-adjusted average N vessels / weekday",
+       x = "Weekday")+
+  facet_nested(rows = vars(npz_id, Dep_ID),
+               cols = vars(network),
+               nest_line = element_line(),
+               scales = "free_y") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+
+
+ggsave(paste0("figs/", "Weekday_mean_adj_combined_total_ins.png"), width=5, height=12, units="in", dpi=300)
+
+
+
+# Use ggarrange to make multipanel plot
+wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |> 
+                               filter(network == "Temperate East"),
+       aes(x = Weekday, y = mean_wkdy_adj)) +
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  geom_line(aes(group = Dep_ID),
+            color = "grey50")+
+  geom_pointrange(aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id
+                      ),
+                  color = "grey50",
+                  size = 0.05,
+                  show.legend = FALSE) +
+  geom_line(data = wkly_means_ins |> 
+                               filter(network == "Temperate East"),
+       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
+       color = "black")+
+  geom_pointrange(data = wkly_means_ins |> 
+                               filter(network == "Temperate East"), aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id
+                      ), 
+                  color = "black",
+                  size = 0.05,
+                  show.legend = FALSE) +
+  labs(y = "Mean-adjusted average N vessels / weekday",
+       x = "Weekday")+
+  facet_nested(rows = vars(npz_id, Dep_ID),
+               # cols = vars(network),
+               nest_line = element_line(),
+               scales = "free_y") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold"),
+    plot.margin = margin(t = 20, b = 5.5, l = 5.5)
+    )
+
+
+
+wkdy_plot_northwest <- ggplot(data = wkly_means_tot |> 
+                               filter(network == "Northwest"),
+       aes(x = Weekday, y = mean_wkdy_adj)) +
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  geom_line(aes(group = Dep_ID),
+            color = "grey50")+
+  geom_pointrange(aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id
+                      ),
+                  color = "grey50",
+                  size = 0.05,
+                  show.legend = FALSE) +
+  geom_line(data = wkly_means_ins |> 
+                               filter(network == "Northwest"),
+       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
+       color = "black")+
+  geom_pointrange(data = wkly_means_ins |> 
+                               filter(network == "Northwest"),
+                  aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id
+                      ), 
+                  color = "black",
+                  size = 0.05,
+                  show.legend = FALSE) +
+  labs(y = "",
+       x = "Weekday")+
+  facet_nested(rows = vars(npz_id, Dep_ID),
+               # cols = vars(network),
+               nest_line = element_line(),
+               scales = "free_y") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold"),
+    plot.margin = margin(t = 20, b = 356)
+    )
+
+
+wkdy_plot_southwest <- ggplot(data = wkly_means_tot |> 
+                               filter(network == "South-west"),
+       aes(x = Weekday, y = mean_wkdy_adj)) +
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  geom_line(aes(group = Dep_ID),
+            color = "grey50")+
+  geom_pointrange(aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id
+                      ),
+                  color = "grey50",
+                  size = 0.05,
+                  show.legend = FALSE) +
+  geom_line(data = wkly_means_ins |> 
+                               filter(network == "South-west"),
+       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
+       color = "black")+
+  geom_pointrange(data = wkly_means_ins |> 
+                               filter(network == "South-west"),
+                  aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id
+                      ), 
+                  color = "black",
+                  size = 0.05,
+                  show.legend = FALSE) +
+  labs(y = "",
+       x = "Weekday")+
+  facet_nested(rows = vars(npz_id, Dep_ID),
+               # cols = vars(network),
+               nest_line = element_line(),
+               scales = "free_y") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold"),
+    plot.margin = margin(t = 20, r = 5.5, b = 93)
+    )
+
+
+ggarrange(wkdy_plot_tempeast, wkdy_plot_northwest, wkdy_plot_southwest,
+          nrow = 1, 
+          labels = c("Temperate East","Northwest","South-west"),
+          vjust=1.25)
+
+ggsave(paste0("figs/", "Weekday_mean_adj_horiz_panels.png"), width=12, height=8, units="in", dpi=300)
+
+
+
+
+
+
+
+# Inside vessels
+ggplot(data = wkly_means_ins,
+       aes(x = Weekday, y = mean_wkdy_adj)) +
+  geom_line(aes(group = Dep_ID),
+            color = "gray70")+
+  geom_pointrange(aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id,
+                      color = ifelse(sd_lower <= 0, 'firebrick','blue')),
+                  size = 0.25,
+                  show.legend = FALSE) +
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  scale_color_manual(values = c("red","black"))+
+  labs(title = "Inside vessels",
+    y = "Mean-adjusted average N vessels / weekday",
+       x = "Weekday")+
+  facet_nested(rows = vars(network, npz_id, Dep_ID), 
+               nest_line = element_line(),
+               scales = "free_y") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly_inside.png"), width=5, height=12, units="in", dpi=300)
+
+
+# Inside maneuvers only
+# Inside vessels
+ggplot(data = wkly_means_ins_man,
+       aes(x = Weekday, y = mean_man_wkdy_adj)) +
+  geom_line(aes(group = Dep_ID),
+            color = "gray70")+
+  geom_pointrange(aes(ymin = man_sd_lower,
+                      ymax = man_sd_upper,
+                      group = npz_id,
+                      color = ifelse(man_sd_lower <= 0, 'firebrick','blue')),
+                  size = 0.25,
+                  show.legend = FALSE) +
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  scale_color_manual(values = c("red","black"))+
+  labs(title = "Inside maneuvers",
+    y = "Mean-adjusted average N vessels / weekday",
+       x = "Weekday")+
+  facet_nested(rows = vars(network, npz_id, Dep_ID), 
+               nest_line = element_line(),
+               scales = "free_y") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly_insideman.png"), width=5, height=12, units="in", dpi=300)
+
+
+
+# Inside small vessels
+ggplot(data = wkly_means_ins_small,
+       aes(x = Weekday, y = mean_wkdy_adj)) +
+  geom_line(aes(group = Dep_ID),
+            color = "gray70")+
+  geom_pointrange(aes(ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id,
+                      color = ifelse(sd_lower <= 0, 'firebrick','blue')),
+                  size = 0.25,
+                  show.legend = FALSE) +
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  scale_color_manual(values = c("red","black"))+
+  labs(title = "Inside small vessels",
+    y = "Mean-adjusted average N vessels / weekday",
+       x = "Weekday")+
+  facet_nested(rows = vars(network, npz_id, Dep_ID), 
+               nest_line = element_line(),
+               scales = "free_y") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly_inside_small.png"), width=5, height=12, units="in", dpi=300)
+
+
+
+```
+
+
+### Plot mean-adjusted weekday counts -- line plot
+
+```{r line-plot weekly mean adj, echo=FALSE}
 
 #### Plotting total & inside on same plots
 
