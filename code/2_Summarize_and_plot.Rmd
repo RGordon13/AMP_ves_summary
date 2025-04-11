@@ -1020,8 +1020,8 @@ wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |>
   geom_hline(yintercept = 0, 
              linetype = 3, # dotted line
              colour = "black") +
-  geom_line(aes(group = Dep_ID),
-            color = "grey50")+
+  # geom_line(aes(group = Dep_ID),
+  #           color = "grey50")+
   geom_pointrange(aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id
@@ -1047,7 +1047,7 @@ wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |>
                       ymax = sd_upper,
                       group = npz_id),
                   color = "black",                
-                  size = 0.1,
+                  size = 0.05,
                   show.legend = FALSE
   )+
   # assign specific colors to values over/under mean
@@ -1075,8 +1075,8 @@ wkdy_plot_northwest <- ggplot(data = wkly_means_tot |>
   geom_hline(yintercept = 0, 
              linetype = 3, # dotted line
              colour = "black") +
-  geom_line(aes(group = Dep_ID),
-            color = "grey50")+
+  # geom_line(aes(group = Dep_ID),
+  #           color = "grey50")+
   geom_pointrange(aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id
@@ -1102,7 +1102,7 @@ wkdy_plot_northwest <- ggplot(data = wkly_means_tot |>
                       ymax = sd_upper,
                       group = npz_id),
                   color = "black",                
-                  size = 0.1,
+                  size = 0.05,
                   show.legend = FALSE
   )+
   # assign specific colors to values over/under mean
@@ -1129,8 +1129,8 @@ wkdy_plot_southwest <- ggplot(data = wkly_means_tot |>
   geom_hline(yintercept = 0, 
              linetype = 3, # dotted line
              colour = "black") +
-  geom_line(aes(group = Dep_ID),
-            color = "grey50")+
+  # geom_line(aes(group = Dep_ID),
+  #           color = "grey50")+
   geom_pointrange(aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id
@@ -1156,7 +1156,7 @@ wkdy_plot_southwest <- ggplot(data = wkly_means_tot |>
                       ymax = sd_upper,
                       group = npz_id),
                   color = "black",                
-                  size = 0.1,
+                  size = 0.05,
                   show.legend = FALSE
   )+
   # assign specific colors to values over/under mean
