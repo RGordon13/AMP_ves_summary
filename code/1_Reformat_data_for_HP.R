@@ -17,6 +17,9 @@ lapply(tidyverse_short, require, character.only = TRUE)
 # source helper file with various data wrangling functions
 source("code/AMP_summary_ves_funs.R")
 
+# set higher digits for using sci notation to get around importing weird date format from Excel
+options(scipen = 13) 
+
 #### Load in data ####
 
 
@@ -155,7 +158,11 @@ write.csv(selns_data, "output/total_ves_selns_data_by_site.csv")
 ins_out_data <- ins_out_og |>
   map(~select(., Filename, Date, Selection, used, pins_sm, pins_med, pins_lg, pins_ovrll, Dep_ID)) |>
   map(~mutate(., Date = as.numeric(Date),
-              Date = as.character(Date))) |>
+              Date = as.character(Date),
+              pins_sm = as.numeric(pins_sm),
+              pins_med = as.numeric(pins_med),
+              pins_lg = as.numeric(pins_lg),
+              pins_ovrll = as.numeric(pins_ovrll))) |>
   bind_rows()
 
 # write csv for easier input later
