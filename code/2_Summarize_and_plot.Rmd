@@ -63,6 +63,9 @@ all_sites_hp <- all_sites_hp |>
     ins_ves_yn = ifelse(total_inside == 0, "N","Y"),
     ins_ves_small_yn = ifelse(total_inside_small == 0, "N","Y"),
     
+    # fix incorrect Dep_ID for 2018_08
+    Dep_ID = str_replace(Dep_ID, pattern = "2018-08-10", replacement = "201808"),
+    
     # add date without year to collapse across years
     Month = month(Begin_Date_loc),
     Week = isoweek(Begin_Date_loc),
@@ -1009,11 +1012,16 @@ ggplot(data = wkly_means_tot,
     strip.text.y = element_text(face = "bold")
     )
 
+```
 
+```{r save weekday combined plot}
 ggsave(paste0("figs/", "Weekday_mean_adj_combined_total_ins.png"), width=5, height=12, units="in", dpi=300)
+```
 
 
+### Plot weekday mean-adjusted counts
 
+```{r weekday ggarranged}
 # Use ggarrange to make multipanel plot
 wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |> 
                                filter(network == "Temperate East"),
@@ -1021,8 +1029,8 @@ wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |>
   geom_hline(yintercept = 0, 
              linetype = 3, # dotted line
              colour = "black") +
-  # geom_line(aes(group = Dep_ID),
-  #           color = "grey50")+
+  
+  # Pointrange for total vessels
   geom_pointrange(aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id
@@ -1030,6 +1038,7 @@ wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |>
   color = "grey50",
   size = 0.05,
   show.legend = FALSE) +
+  
   # bars for inside vessels
   geom_col(data = wkly_means_ins |> 
              filter(network == "Temperate East"),
@@ -1042,18 +1051,20 @@ wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |>
            ),
            show.legend = FALSE
   )+
-  geom_pointrange(data = wkly_means_ins |> 
+  
+  # Linerange for error bars on inside vessels
+  geom_linerange(data = wkly_means_ins |> 
                     filter(network == "Temperate East"), 
                   aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id),
                   color = "black",                
-                  size = 0.05,
+                  # size = 0.1,
                   show.legend = FALSE
   )+
   # assign specific colors to values over/under mean
-  scale_fill_manual(values = c("over" = "firebrick", 
-                               "under" = "darkblue",
+  scale_fill_manual(values = c("over" = "firebrick1", 
+                               "under" = "deepskyblue3",
                                "center" = "grey75"))+
   labs(y = "Mean-adjusted average N vessels / weekday",
        x = "Weekday")+
@@ -1097,20 +1108,20 @@ wkdy_plot_northwest <- ggplot(data = wkly_means_tot |>
            ),
            show.legend = FALSE
   )+
-  geom_pointrange(data = wkly_means_ins |> 
+  geom_linerange(data = wkly_means_ins |> 
                     filter(network == "Northwest"), 
                   aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id),
                   color = "black",                
-                  size = 0.05,
+                  # size = 0.1,
                   show.legend = FALSE
   )+
   # assign specific colors to values over/under mean
-  scale_fill_manual(values = c("over" = "firebrick", 
-                               "under" = "darkblue",
+  scale_fill_manual(values = c("over" = "firebrick1", 
+                               "under" = "deepskyblue3",
                                "center" = "grey75"))+
-  labs(y = "Mean-adjusted average N vessels / weekday",
+  labs(y = "",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
@@ -1151,20 +1162,20 @@ wkdy_plot_southwest <- ggplot(data = wkly_means_tot |>
            ),
            show.legend = FALSE
   )+
-  geom_pointrange(data = wkly_means_ins |> 
+  geom_linerange(data = wkly_means_ins |> 
                     filter(network == "South-west"), 
                   aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id),
                   color = "black",                
-                  size = 0.05,
+                  # size = 0.1,
                   show.legend = FALSE
   )+
   # assign specific colors to values over/under mean
-  scale_fill_manual(values = c("over" = "firebrick", 
-                               "under" = "darkblue",
+  scale_fill_manual(values = c("over" = "firebrick1", 
+                               "under" = "deepskyblue3",
                                "center" = "grey75"))+
-  labs(y = "Mean-adjusted average N vessels / weekday",
+  labs(y = "",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
@@ -1182,15 +1193,18 @@ ggarrange(wkdy_plot_tempeast, wkdy_plot_northwest, wkdy_plot_southwest,
           nrow = 1, 
           labels = c("Temperate East","Northwest","South-west"),
           vjust=1.25)
+```
 
+```{r save ggarranged weekday plot}
 ggsave(paste0("figs/", "Weekday_mean_adj_horiz_panels_bars.png"), width=12, height=8, units="in", dpi=300)
 
+```
 
 
 
+### Weekday inside line plots (not using)
 
-
-
+```{r weekday inside plot}
 # Inside vessels
 ggplot(data = wkly_means_ins,
        aes(x = Weekday, y = mean_wkdy_adj)) +
@@ -1278,8 +1292,6 @@ ggplot(data = wkly_means_ins_small,
     strip.text.y = element_text(face = "bold")
     )
 ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly_inside_small.png"), width=5, height=12, units="in", dpi=300)
-
-
 
 ```
 
@@ -1644,7 +1656,10 @@ daily_means_ins <- all_ves_diel |>
   # get lower & upper bounds for SD around mean of adjusted counts
   mutate(sd_lower = mean_diel_adj - 0.5*(sd(mean_diel_adj)),
          sd_upper = mean_diel_adj + 0.5*(sd(mean_diel_adj)))
- 
+```
+
+
+```{r plotting diel}
 # plot total vessels
 ggplot(data = daily_means_tot,
        aes(x = Begin_Hour_loc, 
@@ -1674,9 +1689,13 @@ ggplot(data = daily_means_tot,
     strip.text.y = element_text(face = "bold")
     )
 ggsave(paste0("figs/", "Diel_mean_adj_dep_presonly_withline.png"), width=8, height=12, units="in", dpi=300)
+```
 
 
 
+
+
+```{r combined total and inside diel}
 #### Combined total & inside to help visualize differences in patterns
 
 ggplot(data = daily_means_tot,
@@ -1685,44 +1704,62 @@ ggplot(data = daily_means_tot,
   geom_hline(yintercept = 0, 
              linetype = 3, # dotted line
              colour = "black") +
-  geom_line(aes(group = Dep_ID),
-            color = "grey50")+
+  
+  # pointrange for total vessels
   geom_pointrange(aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id),
                       color = "grey50",
                   size = 0.1,
                   show.legend = FALSE) +
-  geom_line(data = daily_means_ins,
-            aes(group = Dep_ID),
-            color = "black")+
-  geom_pointrange(data = daily_means_ins,
+  
+  # bar for inside vessels
+    geom_col(data = daily_means_ins,
+           aes(x = Begin_Hour_loc, 
+               y = mean_diel_adj,
+               # conditional fill based on lower SD value
+               # "if mean +/- SD is above 0, 'over'
+               fill = ifelse(sd_lower >= 0, 'over',
+                             ifelse(sd_upper <=0, 'under', 'center'))
+           ),
+           show.legend = FALSE
+  ) +
+  
+  # linerange for inside error bars
+  geom_linerange(data = daily_means_ins,
                   aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id),
                       color = "black",
-                  size = 0.1,
                   show.legend = FALSE) +
+    scale_fill_manual(values = c("over" = "firebrick1", 
+                               "under" = "deepskyblue3",
+                               "center" = "grey75"))+
   scale_x_continuous(breaks = seq(0,23,2))+
   labs(y = "Mean-adjusted average N vessels / hour",
        x = "Hour of Day (Local TZ)",
        title = "")+
    facet_nested(rows = vars(network, npz_id, Dep_ID), 
                nest_line = element_line(),
-               scales = "free_y") +
+               scales = "fixed") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
     strip.text.y = element_text(face = "bold")
     )
+```
 
+
+```{r save combined diel plot}
 ggsave(paste0("figs/", "Diel_mean_adj_dep_combined.png"), width=8, height=12, units="in", dpi=300)
 
 
+```
 
 
+### Inside only diel plots (not using)
 
-
+```{r inside diel}
 # Plot inside vessels
 ggplot(data = daily_means_ins,
        aes(x = Begin_Hour_loc, 
