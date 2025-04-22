@@ -871,7 +871,7 @@ wkly_means_tot <- all_ves_wkdy |>
 
 
 
-# Weekly mean-adjusted counts, inside and inside maneuvers
+# Weekly mean-adjusted counts, inside vessels
 wkly_means_ins <- all_ves_wkdy |>
   # group to week level
   group_by(network, npz_id, Dep_ID, Dep, Date_week) |>
@@ -879,31 +879,26 @@ wkly_means_ins <- all_ves_wkdy |>
   summarize(n_days = n(),
             week_sum = sum(Total_inside, na.rm = TRUE)) |>
   # only keep full weeks n_days == 7
-  # only keep weeks with presence
+  # only keep weeks with presence inside
   filter(n_days == 7,
          week_sum > 0) |>
   # get original weekday counts
   left_join(all_ves_wkdy) |>
   # re-group to week level
   group_by(network, npz_id, Dep_ID, Dep, Date_week) |>
-  # calculate weekly mean of total presence for days with presence
+  # calculate weekly mean of total presence inside for days with presence inside
   mutate(mean_tot = mean(Total_inside, na.rm = TRUE),
-         mean_man = mean(Inside_maneuver, na.rm = TRUE),
          # calculate mean-adjusted counts per weekday
-         tot_wkdy_adj = Total_inside - mean_tot,
-         man_wkdy_adj = Inside_maneuver - mean_man) |>
+         tot_wkdy_adj = Total_inside - mean_tot) |>
   group_by(network, npz_id, Dep_ID, Weekday) |>
   # get mean of mean-adjusted counts for each weekday
-  summarise(mean_wkdy_adj = mean(tot_wkdy_adj, na.rm = TRUE),
-            mean_man_wkdy_adj = mean(man_wkdy_adj, na.rm = TRUE)) |>
+  summarise(mean_wkdy_adj = mean(tot_wkdy_adj, na.rm = TRUE)) |>
   # get lower & upper bounds of SD of the mean of the adjusted counts
   mutate(sd_lower = mean_wkdy_adj - 0.5*(sd(mean_wkdy_adj)),
-         sd_upper = mean_wkdy_adj + 0.5*(sd(mean_wkdy_adj)),
-         man_sd_lower = mean_man_wkdy_adj - 0.5*(sd(mean_man_wkdy_adj)),
-         man_sd_upper = mean_man_wkdy_adj + 0.5*(sd(mean_man_wkdy_adj)))
+         sd_upper = mean_wkdy_adj + 0.5*(sd(mean_wkdy_adj)))
 
 
-# Weekly mean-adjusted counts, inside and inside maneuvers
+# Weekly mean-adjusted counts, maneuvers
 wkly_means_ins_man <- all_ves_wkdy |>
   # group to week level
   group_by(network, npz_id, Dep_ID, Dep, Date_week) |>
@@ -911,14 +906,14 @@ wkly_means_ins_man <- all_ves_wkdy |>
   summarize(n_days = n(),
             week_sum = sum(Inside_maneuver, na.rm = TRUE)) |>
   # only keep full weeks n_days == 7
-  # only keep weeks with presence
+  # only keep weeks with presence of maneuvers
   filter(n_days == 7,
          week_sum > 0) |>
   # get original weekday counts
   left_join(all_ves_wkdy) |>
   # re-group to week level
   group_by(network, npz_id, Dep_ID, Dep, Date_week) |>
-  # calculate weekly mean of total presence for days with presence
+  # calculate weekly mean of total presence for days with presence of maneuvers
   mutate(mean_man = mean(Inside_maneuver, na.rm = TRUE),
          # calculate mean-adjusted counts per weekday
          man_wkdy_adj = Inside_maneuver - mean_man) |>
@@ -930,96 +925,11 @@ wkly_means_ins_man <- all_ves_wkdy |>
          man_sd_upper = mean_man_wkdy_adj + 0.5*(sd(mean_man_wkdy_adj)))
 
 
-# Weekly mean-adjusted counts, inside small only
-wkly_means_ins_small <- all_ves_wkdy |>
-  # group to week level
-  group_by(network, npz_id, Dep_ID, Dep, Date_week) |>
-  # get n_days per week in dataset
-  summarize(n_days = n(),
-            week_sum = sum(Total_inside_small, na.rm = TRUE)) |>
-  # only keep full weeks n_days == 7
-  # only keep weeks with presence
-  filter(n_days == 7,
-         week_sum > 0) |>
-  # get original weekday counts
-  left_join(all_ves_wkdy) |>
-  # re-group to week level
-  group_by(network, npz_id, Dep_ID, Dep, Date_week) |>
-  # calculate weekly mean of total presence for days with presence
-  mutate(mean_tot = mean(Total_inside_small, na.rm = TRUE),
-         # calculate mean-adjusted counts per weekday
-         tot_wkdy_adj = Total_inside_small - mean_tot) |>
-  group_by(network, npz_id, Dep_ID, Weekday) |>
-  # get mean of mean-adjusted counts for each weekday
-  summarise(mean_wkdy_adj = mean(tot_wkdy_adj, na.rm = TRUE)) |>
-  # get lower & upper bounds of SD of the mean of the adjusted counts
-  mutate(sd_lower = mean_wkdy_adj - 0.5*(sd(mean_wkdy_adj)),
-         sd_upper = mean_wkdy_adj + 0.5*(sd(mean_wkdy_adj)))
 
 ```
 
 
-
-
-
-
-### Plot mean-adjusted weekday counts -- bar plot
-
-```{r bar-plot weekly mean adj, echo=FALSE}
-
-#### Plotting total & inside on same plots
-
-ggplot(data = wkly_means_tot,
-       aes(x = Weekday, y = mean_wkdy_adj)) +
-  geom_hline(yintercept = 0, 
-             linetype = 3, # dotted line
-             colour = "black") +
-  geom_line(aes(group = Dep_ID),
-            color = "grey50")+
-  geom_pointrange(aes(ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id
-                      # color = ifelse(sd_lower <= 0, 'gray70','black')
-                      ),
-                  color = "grey50",
-                  size = 0.1,
-                  show.legend = FALSE) +
-  geom_col(data = wkly_means_ins,
-           aes(x = Weekday, 
-               y = mean_wkdy_adj,
-               fill = ifelse(mean_wkdy_adj >= 0, 'over','under')
-           )
-           )+
-  geom_pointrange(data = wkly_means_ins,
-                  aes(ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id),
-                  color = "black",                
-                  size = 0.1,
-                  show.legend = FALSE
-                  )+
-  scale_fill_manual(values = c("over" = "firebrick", 
-                               "under" = "darkblue"))+
-  labs(y = "Mean-adjusted average N vessels / weekday",
-       x = "Weekday")+
-  facet_nested(rows = vars(npz_id, Dep_ID),
-               cols = vars(network),
-               nest_line = element_line(),
-               scales = "free_y") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
-
-```
-
-```{r save weekday combined plot}
-ggsave(paste0("figs/", "Weekday_mean_adj_combined_total_ins.png"), width=5, height=12, units="in", dpi=300)
-```
-
-
-### Plot weekday mean-adjusted counts
+### Plot weekday mean-adjusted counts -- Total & Inside
 
 ```{r weekday ggarranged}
 # Use ggarrange to make multipanel plot
@@ -1200,228 +1110,127 @@ ggsave(paste0("figs/", "Weekday_mean_adj_horiz_panels_bars.png"), width=12, heig
 
 ```
 
+### Plot weekday mean-adjusted counts -- Inside & maneuvers
 
-
-### Weekday inside line plots (not using)
-
-```{r weekday inside plot}
-# Inside vessels
-ggplot(data = wkly_means_ins,
-       aes(x = Weekday, y = mean_wkdy_adj)) +
-  geom_line(aes(group = Dep_ID),
-            color = "gray70")+
-  geom_pointrange(aes(ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id,
-                      color = ifelse(sd_lower <= 0, 'firebrick','blue')),
-                  size = 0.25,
-                  show.legend = FALSE) +
-  geom_hline(yintercept = 0, 
-             linetype = 3, # dotted line
-             colour = "black") +
-  scale_color_manual(values = c("red","black"))+
-  labs(title = "Inside vessels",
-    y = "Mean-adjusted average N vessels / weekday",
-       x = "Weekday")+
-  facet_nested(rows = vars(network, npz_id, Dep_ID), 
-               nest_line = element_line(),
-               scales = "free_y") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
-ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly_inside.png"), width=5, height=12, units="in", dpi=300)
-
-
-# Inside maneuvers only
-# Inside vessels
-ggplot(data = wkly_means_ins_man,
-       aes(x = Weekday, y = mean_man_wkdy_adj)) +
-  geom_line(aes(group = Dep_ID),
-            color = "gray70")+
-  geom_pointrange(aes(ymin = man_sd_lower,
-                      ymax = man_sd_upper,
-                      group = npz_id,
-                      color = ifelse(man_sd_lower <= 0, 'firebrick','blue')),
-                  size = 0.25,
-                  show.legend = FALSE) +
-  geom_hline(yintercept = 0, 
-             linetype = 3, # dotted line
-             colour = "black") +
-  scale_color_manual(values = c("red","black"))+
-  labs(title = "Inside maneuvers",
-    y = "Mean-adjusted average N vessels / weekday",
-       x = "Weekday")+
-  facet_nested(rows = vars(network, npz_id, Dep_ID), 
-               nest_line = element_line(),
-               scales = "free_y") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
-ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly_insideman.png"), width=5, height=12, units="in", dpi=300)
-
-
-
-# Inside small vessels
-ggplot(data = wkly_means_ins_small,
-       aes(x = Weekday, y = mean_wkdy_adj)) +
-  geom_line(aes(group = Dep_ID),
-            color = "gray70")+
-  geom_pointrange(aes(ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id,
-                      color = ifelse(sd_lower <= 0, 'firebrick','blue')),
-                  size = 0.25,
-                  show.legend = FALSE) +
-  geom_hline(yintercept = 0, 
-             linetype = 3, # dotted line
-             colour = "black") +
-  scale_color_manual(values = c("red","black"))+
-  labs(title = "Inside small vessels",
-    y = "Mean-adjusted average N vessels / weekday",
-       x = "Weekday")+
-  facet_nested(rows = vars(network, npz_id, Dep_ID), 
-               nest_line = element_line(),
-               scales = "free_y") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
-ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly_inside_small.png"), width=5, height=12, units="in", dpi=300)
-
-```
-
-
-### Plot mean-adjusted weekday counts -- line plot
-
-```{r line-plot weekly mean adj, echo=FALSE}
-
-#### Plotting total & inside on same plots
-
-ggplot(data = wkly_means_tot,
-       aes(x = Weekday, y = mean_wkdy_adj)) +
-  geom_hline(yintercept = 0, 
-             linetype = 3, # dotted line
-             colour = "black") +
-  geom_line(aes(group = Dep_ID),
-            color = "grey50")+
-  geom_pointrange(aes(ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id
-                      # color = ifelse(sd_lower <= 0, 'gray70','black')
-                      ),
-                  color = "grey50",
-                  size = 0.1,
-                  show.legend = FALSE) +
-  geom_line(data = wkly_means_ins,
-       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
-       color = "black")+
-  geom_pointrange(data = wkly_means_ins,
-                  aes(ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id
-                      ), 
-                  color = "black",
-                  size = 0.1,
-                  show.legend = FALSE) +
-  labs(y = "Mean-adjusted average N vessels / weekday",
-       x = "Weekday")+
-  facet_nested(rows = vars(npz_id, Dep_ID),
-               cols = vars(network),
-               nest_line = element_line(),
-               scales = "free_y") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
-
-
-ggsave(paste0("figs/", "Weekday_mean_adj_combined_total_ins.png"), width=5, height=12, units="in", dpi=300)
-
-
-
+```{r weekday maneuvers ggarranged}
 # Use ggarrange to make multipanel plot
-wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |> 
-                               filter(network == "Temperate East"),
-       aes(x = Weekday, y = mean_wkdy_adj)) +
+wkdy_plot_man_tempeast <- ggplot() +
+  # dotted line to show 0
   geom_hline(yintercept = 0, 
              linetype = 3, # dotted line
              colour = "black") +
-  geom_line(aes(group = Dep_ID),
-            color = "grey50")+
-  geom_pointrange(aes(ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id
-                      ),
-                  color = "grey50",
-                  size = 0.05,
-                  show.legend = FALSE) +
-  geom_line(data = wkly_means_ins |> 
-                               filter(network == "Temperate East"),
-       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
-       color = "black")+
+  
+  
+  # bars for maneuvering vessels
+  geom_col(data = wkly_means_ins_man |> 
+             filter(network == "Temperate East"),
+           aes(x = Weekday, 
+               y = mean_man_wkdy_adj,
+               # conditional fill based on lower SD value
+               # "if mean +/- SD is above 0, 'over'
+               fill = ifelse(man_sd_lower >= 0, 'over',
+                             ifelse(man_sd_upper <=0, 'under', 'center'))
+           ),
+           show.legend = FALSE
+  )+
+  # Pointrange for inside vessels
   geom_pointrange(data = wkly_means_ins |> 
-                               filter(network == "Temperate East"), aes(ymin = sd_lower,
+                               filter(network == "Temperate East"),
+                  aes(x = Weekday,
+                      y = mean_wkdy_adj,
+                      ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id
-                      ), 
-                  color = "black",
-                  size = 0.05,
-                  show.legend = FALSE) +
+  ),
+  color = "grey50",
+  size = 0.05,
+  show.legend = FALSE) +
+  
+  # Linerange for error bars on inside vessels
+  geom_linerange(data = wkly_means_ins_man |> 
+                    filter(network == "Temperate East"), 
+                  aes(x = Weekday,
+                      y = mean_man_wkdy_adj,
+                      ymin = man_sd_lower,
+                      ymax = man_sd_upper,
+                      group = npz_id),
+                  color = "black",                
+                  # size = 0.1,
+                  show.legend = FALSE
+  )+
+  # assign specific colors to values over/under mean
+  scale_fill_manual(values = c("over" = "deepskyblue", 
+                               "under" = "orange",
+                               "center" = "grey75"))+
   labs(y = "Mean-adjusted average N vessels / weekday",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
                nest_line = element_line(),
-               scales = "free_y") +
+               scales = "fixed") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
     strip.text.y = element_text(face = "bold"),
     plot.margin = margin(t = 20, b = 5.5, l = 5.5)
-    )
+  )
 
 
 
-wkdy_plot_northwest <- ggplot(data = wkly_means_tot |> 
-                               filter(network == "Northwest"),
-       aes(x = Weekday, y = mean_wkdy_adj)) +
+wkdy_plot_man_northwest <- ggplot() +
+  # dotted line to show 0
   geom_hline(yintercept = 0, 
              linetype = 3, # dotted line
              colour = "black") +
-  geom_line(aes(group = Dep_ID),
-            color = "grey50")+
-  geom_pointrange(aes(ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id
-                      ),
-                  color = "grey50",
-                  size = 0.05,
-                  show.legend = FALSE) +
-  geom_line(data = wkly_means_ins |> 
-                               filter(network == "Northwest"),
-       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
-       color = "black")+
+  
+  
+  # bars for maneuvering vessels
+  geom_col(data = wkly_means_ins_man |> 
+             filter(network == "Northwest"),
+           aes(x = Weekday, 
+               y = mean_man_wkdy_adj,
+               # conditional fill based on lower SD value
+               # "if mean +/- SD is above 0, 'over'
+               fill = ifelse(man_sd_lower >= 0, 'over',
+                             ifelse(man_sd_upper <=0, 'under', 'center'))
+           ),
+           show.legend = FALSE
+  )+
+  # Pointrange for inside vessels
   geom_pointrange(data = wkly_means_ins |> 
                                filter(network == "Northwest"),
-                  aes(ymin = sd_lower,
+                  aes(x = Weekday,
+                      y = mean_wkdy_adj,
+                      ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id
-                      ), 
-                  color = "black",
-                  size = 0.05,
-                  show.legend = FALSE) +
+  ),
+  color = "grey50",
+  size = 0.05,
+  show.legend = FALSE) +
+  
+  # Linerange for error bars on inside vessels
+  geom_linerange(data = wkly_means_ins_man |> 
+                    filter(network == "Northwest"), 
+                  aes(x = Weekday,
+                      y = mean_man_wkdy_adj,
+                      ymin = man_sd_lower,
+                      ymax = man_sd_upper,
+                      group = npz_id),
+                  color = "black",                
+                  # size = 0.1,
+                  show.legend = FALSE
+  )+
+  # assign specific colors to values over/under mean
+  scale_fill_manual(values = c("over" = "deepskyblue", 
+                               "under" = "orange",
+                               "center" = "grey75"))+
   labs(y = "",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
                nest_line = element_line(),
-               scales = "free_y") +
+               scales = "fixed") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
@@ -1430,40 +1239,60 @@ wkdy_plot_northwest <- ggplot(data = wkly_means_tot |>
     )
 
 
-wkdy_plot_southwest <- ggplot(data = wkly_means_tot |> 
-                               filter(network == "South-west"),
-       aes(x = Weekday, y = mean_wkdy_adj)) +
+wkdy_plot_man_southwest <- ggplot() +
+  # dotted line to show 0
   geom_hline(yintercept = 0, 
              linetype = 3, # dotted line
              colour = "black") +
-  geom_line(aes(group = Dep_ID),
-            color = "grey50")+
-  geom_pointrange(aes(ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id
-                      ),
-                  color = "grey50",
-                  size = 0.05,
-                  show.legend = FALSE) +
-  geom_line(data = wkly_means_ins |> 
-                               filter(network == "South-west"),
-       aes(x = Weekday, y = mean_wkdy_adj, group = Dep_ID),
-       color = "black")+
+  
+  
+  # bars for maneuvering vessels
+  geom_col(data = wkly_means_ins_man |> 
+             filter(network == "South-west"),
+           aes(x = Weekday, 
+               y = mean_man_wkdy_adj,
+               # conditional fill based on lower SD value
+               # "if mean +/- SD is above 0, 'over'
+               fill = ifelse(man_sd_lower >= 0, 'over',
+                             ifelse(man_sd_upper <=0, 'under', 'center'))
+           ),
+           show.legend = FALSE
+  )+
+  # Pointrange for inside vessels
   geom_pointrange(data = wkly_means_ins |> 
                                filter(network == "South-west"),
-                  aes(ymin = sd_lower,
+                  aes(x = Weekday,
+                      y = mean_wkdy_adj,
+                      ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id
-                      ), 
-                  color = "black",
-                  size = 0.05,
-                  show.legend = FALSE) +
+  ),
+  color = "grey50",
+  size = 0.05,
+  show.legend = FALSE) +
+  
+  # Linerange for error bars on inside vessels
+  geom_linerange(data = wkly_means_ins_man |> 
+                    filter(network == "South-west"), 
+                  aes(x = Weekday,
+                      y = mean_man_wkdy_adj,
+                      ymin = man_sd_lower,
+                      ymax = man_sd_upper,
+                      group = npz_id),
+                  color = "black",                
+                  # size = 0.1,
+                  show.legend = FALSE
+  )+
+  # assign specific colors to values over/under mean
+  scale_fill_manual(values = c("over" = "deepskyblue", 
+                               "under" = "orange",
+                               "center" = "grey75"))+
   labs(y = "",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
                nest_line = element_line(),
-               scales = "free_y") +
+               scales = "fixed") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
@@ -1472,111 +1301,16 @@ wkdy_plot_southwest <- ggplot(data = wkly_means_tot |>
     )
 
 
-ggarrange(wkdy_plot_tempeast, wkdy_plot_northwest, wkdy_plot_southwest,
+ggarrange(wkdy_plot_man_tempeast, wkdy_plot_man_northwest, wkdy_plot_man_southwest,
           nrow = 1, 
           labels = c("Temperate East","Northwest","South-west"),
           vjust=1.25)
-
-ggsave(paste0("figs/", "Weekday_mean_adj_horiz_panels.png"), width=12, height=8, units="in", dpi=300)
-
-
-
-
-
-
-
-# Inside vessels
-ggplot(data = wkly_means_ins,
-       aes(x = Weekday, y = mean_wkdy_adj)) +
-  geom_line(aes(group = Dep_ID),
-            color = "gray70")+
-  geom_pointrange(aes(ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id,
-                      color = ifelse(sd_lower <= 0, 'firebrick','blue')),
-                  size = 0.25,
-                  show.legend = FALSE) +
-  geom_hline(yintercept = 0, 
-             linetype = 3, # dotted line
-             colour = "black") +
-  scale_color_manual(values = c("red","black"))+
-  labs(title = "Inside vessels",
-    y = "Mean-adjusted average N vessels / weekday",
-       x = "Weekday")+
-  facet_nested(rows = vars(network, npz_id, Dep_ID), 
-               nest_line = element_line(),
-               scales = "free_y") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
-ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly_inside.png"), width=5, height=12, units="in", dpi=300)
-
-
-# Inside maneuvers only
-# Inside vessels
-ggplot(data = wkly_means_ins_man,
-       aes(x = Weekday, y = mean_man_wkdy_adj)) +
-  geom_line(aes(group = Dep_ID),
-            color = "gray70")+
-  geom_pointrange(aes(ymin = man_sd_lower,
-                      ymax = man_sd_upper,
-                      group = npz_id,
-                      color = ifelse(man_sd_lower <= 0, 'firebrick','blue')),
-                  size = 0.25,
-                  show.legend = FALSE) +
-  geom_hline(yintercept = 0, 
-             linetype = 3, # dotted line
-             colour = "black") +
-  scale_color_manual(values = c("red","black"))+
-  labs(title = "Inside maneuvers",
-    y = "Mean-adjusted average N vessels / weekday",
-       x = "Weekday")+
-  facet_nested(rows = vars(network, npz_id, Dep_ID), 
-               nest_line = element_line(),
-               scales = "free_y") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
-ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly_insideman.png"), width=5, height=12, units="in", dpi=300)
-
-
-
-# Inside small vessels
-ggplot(data = wkly_means_ins_small,
-       aes(x = Weekday, y = mean_wkdy_adj)) +
-  geom_line(aes(group = Dep_ID),
-            color = "gray70")+
-  geom_pointrange(aes(ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id,
-                      color = ifelse(sd_lower <= 0, 'firebrick','blue')),
-                  size = 0.25,
-                  show.legend = FALSE) +
-  geom_hline(yintercept = 0, 
-             linetype = 3, # dotted line
-             colour = "black") +
-  scale_color_manual(values = c("red","black"))+
-  labs(title = "Inside small vessels",
-    y = "Mean-adjusted average N vessels / weekday",
-       x = "Weekday")+
-  facet_nested(rows = vars(network, npz_id, Dep_ID), 
-               nest_line = element_line(),
-               scales = "free_y") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
-ggsave(paste0("figs/", "Weekday_mean_adj_dep_presentonly_inside_small.png"), width=5, height=12, units="in", dpi=300)
-
-
-
 ```
 
+```{r save ggarranged weekday maneuver plot}
+ggsave(paste0("figs/", "Weekday_mean_adj_horiz_panels_bars_maneuver.png"), width=12, height=8, units="in", dpi=300)
+
+```
 
 
 ### Daily mean-adjusted diel presence
@@ -1629,7 +1363,7 @@ daily_means_tot <- all_ves_diel |>
   
 
 
-# Calculate daily mean-adjusted counts per hour
+# Calculate daily mean-adjusted counts per hour for inside vessels
 daily_means_ins <- all_ves_diel |>
   # group to date level
   group_by(network, npz_id, Dep_ID, Dep, Begin_Date_loc) |>
@@ -1656,6 +1390,40 @@ daily_means_ins <- all_ves_diel |>
   # get lower & upper bounds for SD around mean of adjusted counts
   mutate(sd_lower = mean_diel_adj - 0.5*(sd(mean_diel_adj)),
          sd_upper = mean_diel_adj + 0.5*(sd(mean_diel_adj)))
+
+
+
+# Calculate diel mean-adusted counts for maneuvers
+
+daily_means_ins_man <- all_ves_diel |>
+  # group to date level
+  group_by(network, npz_id, Dep_ID, Dep, Begin_Date_loc) |>
+  # get n_hours per day
+  summarize(n_hrs = n(),
+            # and total vessels per day
+            day_sum = sum(Inside_maneuver, na.rm = TRUE)) |>
+  # only keep full days n_hrs == 24
+  # and days with vessels present
+  filter(n_hrs == 24,
+         day_sum > 0) |>
+  # join to get hourly counts back
+  left_join(all_ves_diel) |>
+  # re-group to daily level
+  group_by(network, npz_id, Dep_ID, Dep, Begin_Date_loc) |>
+  # calculate mean total presence per day with vessels
+  mutate(mean_ins_man = mean(Inside_maneuver, na.rm = TRUE),
+         # calculate mean-adjusted counts per hour
+         ins_diel_man_adj = Inside_maneuver - mean_ins_man) |>
+  # group to hour level per deployment
+  group_by(network, npz_id, Dep_ID, Begin_Hour_loc) |>
+  # get mean of mean-adjusted ounts per hour
+  summarise(mean_diel_man_adj = mean(ins_diel_man_adj, na.rm =TRUE)) |>
+  # get lower & upper bounds for SD around mean of adjusted counts
+  mutate(sd_lower = mean_diel_man_adj - 0.5*(sd(mean_diel_man_adj)),
+         sd_upper = mean_diel_man_adj + 0.5*(sd(mean_diel_man_adj)))
+
+
+
 ```
 
 
@@ -1693,7 +1461,7 @@ ggsave(paste0("figs/", "Diel_mean_adj_dep_presonly_withline.png"), width=8, heig
 
 
 
-
+### Plotting diel -- total & inside
 
 ```{r combined total and inside diel}
 #### Combined total & inside to help visualize differences in patterns
@@ -1753,48 +1521,157 @@ ggplot(data = daily_means_tot,
 ```{r save combined diel plot}
 ggsave(paste0("figs/", "Diel_mean_adj_dep_combined.png"), width=8, height=12, units="in", dpi=300)
 
-
 ```
 
 
-### Inside only diel plots (not using)
+### Plotting diel -- inside & maneuver
 
-```{r inside diel}
-# Plot inside vessels
-ggplot(data = daily_means_ins,
-       aes(x = Begin_Hour_loc, 
-           y = mean_diel_adj)) +
-  geom_line(aes(group = Dep_ID),
-            color = "gray70")+
-  geom_pointrange(aes(ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id,
-                      color = ifelse(sd_lower <= 0, 'firebrick','blue')),
-                  size = 0.25,
-                  show.legend = FALSE) +
+
+```{r combined inside and maneuver diel}
+#### Combined total & inside to help visualize differences in patterns
+
+ggplot() +
   geom_hline(yintercept = 0, 
              linetype = 3, # dotted line
              colour = "black") +
-  scale_color_manual(values = c("red","black"))+
+  
+  # pointrange for inside vessels
+  # geom_pointrange(data = daily_means_ins,
+  #      aes(x = Begin_Hour_loc, 
+  #          y = mean_diel_adj, 
+  #          ymin = sd_lower,
+  #                     ymax = sd_upper,
+  #                     group = npz_id),
+  #                     color = "grey50",
+  #                 size = 0.1,
+  #                 show.legend = FALSE) +
+  # 
+  # bar for maneuvering vessels
+    geom_col(data = daily_means_ins_man,
+           aes(x = Begin_Hour_loc, 
+               y = mean_diel_man_adj,
+               # conditional fill based on lower SD value
+               # "if mean +/- SD is above 0, 'over'
+               fill = ifelse(sd_lower >= 0, 'over',
+                             ifelse(sd_upper <=0, 'under', 'center'))
+           ),
+           show.legend = FALSE
+  ) +
+  
+  # linerange for maneuver error bars
+  geom_linerange(data = daily_means_ins_man,
+                  aes(x = Begin_Hour_loc,
+                      ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id),
+                      color = "black",
+                  show.legend = FALSE) +
+    scale_fill_manual(values = c("over" = "deepskyblue", 
+                               "under" = "orange",
+                               "center" = "grey75"))+
   scale_x_continuous(breaks = seq(0,23,2))+
+  scale_y_continuous(limits = c(-0.5,1.0))+
   labs(y = "Mean-adjusted average N vessels / hour",
        x = "Hour of Day (Local TZ)",
-       title = "Inside vessels")+
+       title = "")+
    facet_nested(rows = vars(network, npz_id, Dep_ID), 
                nest_line = element_line(),
-               scales = "free_y") +
+               scales = "fixed") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
     strip.text.y = element_text(face = "bold")
     )
-ggsave(paste0("figs/", "Diel_mean_adj_dep_presonly_ins.png"), width=8, height=12, units="in", dpi=300)
+```
 
 
+```{r save combined diel maneuver plot}
+ggsave(paste0("figs/", "Diel_mean_adj_bars_maneuvers.png"), width=8, height=12, units="in", dpi=300)
 
 ```
 
 
+
+### Crazy idea but it just might work?
+
+```{r try weird idea for diel}
+
+# Use transparency for total/inside/maneuvers
+
+ggplot() +
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  # bottom layer: total vessels (most transparent)
+  geom_col(data = daily_means_tot,
+           aes(x = Begin_Hour_loc, 
+               y = mean_diel_adj,
+               # conditional fill based on lower SD value
+               # "if mean +/- SD is above 0, 'over'
+               # fill = ifelse(sd_lower >= 0, 'over',
+               #               ifelse(sd_upper <=0, 'under', 'center'))
+           ),
+           fill = "white",
+           color = "grey35",
+           alpha = 0.2,
+           show.legend = FALSE) +
+  
+  # middle layer: inside vessels (less transparent)
+  geom_col(data = daily_means_ins,
+           aes(x = Begin_Hour_loc, 
+               y = mean_diel_adj,
+               # conditional fill based on lower SD value
+               # "if mean +/- SD is above 0, 'over'
+               # fill = ifelse(sd_lower >= 0, 'over',
+               #               ifelse(sd_upper <=0, 'under', 'center')),
+               color = ifelse(sd_lower >= 0, 'over',
+                             ifelse(sd_upper <=0, 'under', 'center'))
+           ),
+           # alpha = 0.6,
+           fill = "white",
+           show.legend = FALSE) +
+  
+  # top layer: maneuvering vessels (least transparent)
+    geom_col(data = daily_means_ins_man,
+           aes(x = Begin_Hour_loc, 
+               y = mean_diel_man_adj,
+               # conditional fill based on lower SD value
+               # "if mean +/- SD is above 0, 'over'
+               fill = ifelse(sd_lower >= 0, 'over',
+                             ifelse(sd_upper <=0, 'under', 'center')),
+               color = ifelse(sd_lower >= 0, 'over',
+                             ifelse(sd_upper <=0, 'under', 'center'))
+           ),
+           alpha = 0.6,
+           show.legend = FALSE) +
+  scale_fill_manual(values = c("over" = "deepskyblue", 
+                               "under" = "orange",
+                               "center" = "grey75"))+
+    scale_color_manual(values = c("over" = "deepskyblue", 
+                               "under" = "orange",
+                               "center" = "grey75"))+
+  scale_x_continuous(breaks = seq(0,23,2))+
+  labs(y = "Mean-adjusted average N vessels / hour",
+       x = "Hour of Day (Local TZ)",
+       title = "")+
+   facet_nested(rows = vars(network, npz_id, Dep_ID), 
+               nest_line = element_line(),
+               scales = "fixed") +
+  theme(
+    axis.text.x = element_text(face = "bold"),
+    strip.background = element_blank(),
+    strip.text.y = element_text(face = "bold")
+    )
+
+ggsave(paste0("figs/", "Diel_mean_adj_overlapping.png"), width=8, height=12, units="in", dpi=300)
+
+
+
+
+
+
+
+```
 
 ```{r pooling SIMP sites}
 ### Compare CGMP deployments
