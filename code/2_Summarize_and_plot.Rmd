@@ -1115,36 +1115,7 @@ ggsave(paste0("figs/", "Weekday_mean_adj_horiz_panels_bars.png"), width=12, heig
 ```{r weekday maneuvers ggarranged}
 # Use ggarrange to make multipanel plot
 wkdy_plot_man_tempeast <- ggplot() +
-  # dotted line to show 0
-  geom_hline(yintercept = 0, 
-             linetype = 3, # dotted line
-             colour = "black") +
-  
-  
-  # bars for maneuvering vessels
-  geom_col(data = wkly_means_ins_man |> 
-             filter(network == "Temperate East"),
-           aes(x = Weekday, 
-               y = mean_man_wkdy_adj,
-               # conditional fill based on lower SD value
-               # "if mean +/- SD is above 0, 'over'
-               fill = ifelse(man_sd_lower >= 0, 'over',
-                             ifelse(man_sd_upper <=0, 'under', 'center'))
-           ),
-           show.legend = FALSE
-  )+
-  # Pointrange for inside vessels
-  geom_pointrange(data = wkly_means_ins |> 
-                               filter(network == "Temperate East"),
-                  aes(x = Weekday,
-                      y = mean_wkdy_adj,
-                      ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id
-  ),
-  color = "grey50",
-  size = 0.05,
-  show.legend = FALSE) +
+
   
   # Linerange for error bars on inside vessels
   geom_linerange(data = wkly_means_ins_man |> 
@@ -1158,10 +1129,41 @@ wkdy_plot_man_tempeast <- ggplot() +
                   # size = 0.1,
                   show.legend = FALSE
   )+
+  # bars for maneuvering vessels
+  geom_col(data = wkly_means_ins_man |> 
+             filter(network == "Temperate East"),
+           aes(x = Weekday, 
+               y = mean_man_wkdy_adj,
+               # conditional fill based on lower SD value
+               # "if mean +/- SD is above 0, 'over'
+               fill = ifelse(man_sd_lower >= 0, 'over',
+                             ifelse(man_sd_upper <=0, 'under', 'center'))
+           ),
+           show.legend = FALSE
+  )+  
+  # dotted line to show 0
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  # Pointrange for inside vessels
+  # geom_pointrange(data = wkly_means_ins |> 
+  #                              filter(network == "Temperate East"),
+  #                 aes(x = Weekday,
+  #                     y = mean_wkdy_adj,
+  #                     ymin = sd_lower,
+  #                     ymax = sd_upper,
+  #                     group = npz_id
+  # ),
+  # color = "grey50",
+  # size = 0.05,
+  # show.legend = FALSE) +
+  # 
+  
   # assign specific colors to values over/under mean
   scale_fill_manual(values = c("over" = "deepskyblue", 
                                "under" = "orange",
                                "center" = "grey75"))+
+  scale_y_continuous(limits = c(-1.5,2.5))+
   labs(y = "Mean-adjusted average N vessels / weekday",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
@@ -1178,37 +1180,7 @@ wkdy_plot_man_tempeast <- ggplot() +
 
 
 wkdy_plot_man_northwest <- ggplot() +
-  # dotted line to show 0
-  geom_hline(yintercept = 0, 
-             linetype = 3, # dotted line
-             colour = "black") +
-  
-  
-  # bars for maneuvering vessels
-  geom_col(data = wkly_means_ins_man |> 
-             filter(network == "Northwest"),
-           aes(x = Weekday, 
-               y = mean_man_wkdy_adj,
-               # conditional fill based on lower SD value
-               # "if mean +/- SD is above 0, 'over'
-               fill = ifelse(man_sd_lower >= 0, 'over',
-                             ifelse(man_sd_upper <=0, 'under', 'center'))
-           ),
-           show.legend = FALSE
-  )+
-  # Pointrange for inside vessels
-  geom_pointrange(data = wkly_means_ins |> 
-                               filter(network == "Northwest"),
-                  aes(x = Weekday,
-                      y = mean_wkdy_adj,
-                      ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id
-  ),
-  color = "grey50",
-  size = 0.05,
-  show.legend = FALSE) +
-  
+ 
   # Linerange for error bars on inside vessels
   geom_linerange(data = wkly_means_ins_man |> 
                     filter(network == "Northwest"), 
@@ -1221,10 +1193,43 @@ wkdy_plot_man_northwest <- ggplot() +
                   # size = 0.1,
                   show.legend = FALSE
   )+
+  # bars for maneuvering vessels
+  geom_col(data = wkly_means_ins_man |> 
+             filter(network == "Northwest"),
+           aes(x = Weekday, 
+               y = mean_man_wkdy_adj,
+               # conditional fill based on lower SD value
+               # "if mean +/- SD is above 0, 'over'
+               fill = ifelse(man_sd_lower >= 0, 'over',
+                             ifelse(man_sd_upper <=0, 'under', 'center'))
+           ),
+           show.legend = FALSE
+  )+ 
+  
+  # dotted line to show 0
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  
+  # Pointrange for inside vessels
+  # geom_pointrange(data = wkly_means_ins |> 
+  #                              filter(network == "Northwest"),
+  #                 aes(x = Weekday,
+  #                     y = mean_wkdy_adj,
+  #                     ymin = sd_lower,
+  #                     ymax = sd_upper,
+  #                     group = npz_id
+  # ),
+  # color = "grey50",
+  # size = 0.05,
+  # show.legend = FALSE) +
+  # 
+  
   # assign specific colors to values over/under mean
   scale_fill_manual(values = c("over" = "deepskyblue", 
                                "under" = "orange",
                                "center" = "grey75"))+
+    scale_y_continuous(limits = c(-1.5,2.5))+
   labs(y = "",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
@@ -1240,36 +1245,6 @@ wkdy_plot_man_northwest <- ggplot() +
 
 
 wkdy_plot_man_southwest <- ggplot() +
-  # dotted line to show 0
-  geom_hline(yintercept = 0, 
-             linetype = 3, # dotted line
-             colour = "black") +
-  
-  
-  # bars for maneuvering vessels
-  geom_col(data = wkly_means_ins_man |> 
-             filter(network == "South-west"),
-           aes(x = Weekday, 
-               y = mean_man_wkdy_adj,
-               # conditional fill based on lower SD value
-               # "if mean +/- SD is above 0, 'over'
-               fill = ifelse(man_sd_lower >= 0, 'over',
-                             ifelse(man_sd_upper <=0, 'under', 'center'))
-           ),
-           show.legend = FALSE
-  )+
-  # Pointrange for inside vessels
-  geom_pointrange(data = wkly_means_ins |> 
-                               filter(network == "South-west"),
-                  aes(x = Weekday,
-                      y = mean_wkdy_adj,
-                      ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id
-  ),
-  color = "grey50",
-  size = 0.05,
-  show.legend = FALSE) +
   
   # Linerange for error bars on inside vessels
   geom_linerange(data = wkly_means_ins_man |> 
@@ -1283,10 +1258,41 @@ wkdy_plot_man_southwest <- ggplot() +
                   # size = 0.1,
                   show.legend = FALSE
   )+
+  # bars for maneuvering vessels
+  geom_col(data = wkly_means_ins_man |> 
+             filter(network == "South-west"),
+           aes(x = Weekday, 
+               y = mean_man_wkdy_adj,
+               # conditional fill based on lower SD value
+               # "if mean +/- SD is above 0, 'over'
+               fill = ifelse(man_sd_lower >= 0, 'over',
+                             ifelse(man_sd_upper <=0, 'under', 'center'))
+           ),
+           show.legend = FALSE
+  )+
+  # dotted line to show 0
+  geom_hline(yintercept = 0, 
+             linetype = 3, # dotted line
+             colour = "black") +
+  # Pointrange for inside vessels
+  # geom_pointrange(data = wkly_means_ins |> 
+  #                              filter(network == "South-west"),
+  #                 aes(x = Weekday,
+  #                     y = mean_wkdy_adj,
+  #                     ymin = sd_lower,
+  #                     ymax = sd_upper,
+  #                     group = npz_id
+  # ),
+  # color = "grey50",
+  # size = 0.05,
+  # show.legend = FALSE) +
+  
+  
   # assign specific colors to values over/under mean
   scale_fill_manual(values = c("over" = "deepskyblue", 
                                "under" = "orange",
                                "center" = "grey75"))+
+    scale_y_continuous(limits = c(-1.5,2.5))+
   labs(y = "",
        x = "Weekday")+
   facet_nested(rows = vars(npz_id, Dep_ID),
@@ -1297,7 +1303,7 @@ wkdy_plot_man_southwest <- ggplot() +
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
     strip.text.y = element_text(face = "bold"),
-    plot.margin = margin(t = 20, r = 5.5, b = 93)
+    plot.margin = margin(t = 20, r = 5.5, b = 356)
     )
 
 
