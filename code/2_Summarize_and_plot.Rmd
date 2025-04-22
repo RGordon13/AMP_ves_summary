@@ -1473,16 +1473,16 @@ ggplot(data = daily_means_tot,
              linetype = 3, # dotted line
              colour = "black") +
   
-  # pointrange for total vessels
-  geom_pointrange(aes(ymin = sd_lower,
+  
+  # linerange for inside error bars
+  geom_linerange(data = daily_means_ins,
+                  aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id),
-                      color = "grey50",
-                  size = 0.1,
+                      color = "black",
                   show.legend = FALSE) +
-  
   # bar for inside vessels
-    geom_col(data = daily_means_ins,
+  geom_col(data = daily_means_ins,
            aes(x = Begin_Hour_loc, 
                y = mean_diel_adj,
                # conditional fill based on lower SD value
@@ -1492,16 +1492,16 @@ ggplot(data = daily_means_tot,
            ),
            show.legend = FALSE
   ) +
-  
-  # linerange for inside error bars
-  geom_linerange(data = daily_means_ins,
-                  aes(ymin = sd_lower,
+  # pointrange for total vessels
+  geom_pointrange(aes(ymin = sd_lower,
                       ymax = sd_upper,
                       group = npz_id),
-                      color = "black",
+                      color = "grey50",
+                  size = 0.1,
                   show.legend = FALSE) +
-    scale_fill_manual(values = c("over" = "firebrick1", 
-                               "under" = "deepskyblue3",
+
+    scale_fill_manual(values = c("over" = "deepskyblue", 
+                               "under" = "orange",
                                "center" = "grey75"))+
   scale_x_continuous(breaks = seq(0,23,2))+
   labs(y = "Mean-adjusted average N vessels / hour",
@@ -1546,6 +1546,15 @@ ggplot() +
   #                 size = 0.1,
   #                 show.legend = FALSE) +
   # 
+  # linerange for maneuver error bars
+  geom_linerange(data = daily_means_ins_man,
+                  aes(x = Begin_Hour_loc,
+                      ymin = sd_lower,
+                      ymax = sd_upper,
+                      group = npz_id),
+                      color = "black",
+                  show.legend = FALSE) +
+  
   # bar for maneuvering vessels
     geom_col(data = daily_means_ins_man,
            aes(x = Begin_Hour_loc, 
@@ -1558,14 +1567,7 @@ ggplot() +
            show.legend = FALSE
   ) +
   
-  # linerange for maneuver error bars
-  geom_linerange(data = daily_means_ins_man,
-                  aes(x = Begin_Hour_loc,
-                      ymin = sd_lower,
-                      ymax = sd_upper,
-                      group = npz_id),
-                      color = "black",
-                  show.legend = FALSE) +
+  
     scale_fill_manual(values = c("over" = "deepskyblue", 
                                "under" = "orange",
                                "center" = "grey75"))+
