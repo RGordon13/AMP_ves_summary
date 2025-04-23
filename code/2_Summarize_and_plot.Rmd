@@ -685,24 +685,24 @@ ggplot() +
          filter(Ves_behav == "total_outside",
                npz_id != "SWCMP"),
         aes(x = npz_id,
-           y = ves_counts_diverge,
-           fill = network),
+           y = ves_counts_diverge),
          position = position_stack(reverse = TRUE),
+           fill = "grey75",
         show.legend = FALSE
          )+
-  geom_col_pattern(data = all_ves_long |> 
+  geom_col(data = all_ves_long |> 
          filter(Ves_behav == "Total_inside",
                npz_id != "SWCMP"),
          aes(x = npz_id,
            y = ves_counts_diverge,
-           pattern_fill = network),
+           fill = network),
     position = position_stack(reverse = TRUE),
     # pattern_key_scale_factor = 1.3,
     # pattern = "circle",
     # pattern_density = 0.05,
-    fill = "grey80",
+    # fill = "grey80",
     # pattern_fill = "black",
-    pattern_colour = NA,
+    # pattern_colour = NA,
     show.legend = FALSE
                    ) +
   guides(fill = "none", alpha = "none")+ # take away fill legend but keep alpha legend
@@ -713,9 +713,9 @@ ggplot() +
   scale_fill_manual(values = c("Temperate East" = "#00AB8E",
                              "Northwest" = "#A05EB5",
                              "South-west" = "#485CC7"))+
-  scale_pattern_fill_manual(values = c("Temperate East" = "#00AB8E",
-                             "Northwest" = "#A05EB5",
-                             "South-west" = "#485CC7"))+
+  # scale_pattern_fill_manual(values = c("Temperate East" = "#00AB8E",
+  #                            "Northwest" = "#A05EB5",
+  #                            "South-west" = "#485CC7"))+
   # scale_color_manual(values = c("Temperate East" = "#00AB8E",
   #                            "Northwest" = "#A05EB5",
   #                            "South-west" = "#485CC7"))+
@@ -740,7 +740,7 @@ ggplot() +
 ```
 
 ```{r save pattern fig}
-ggsave(paste0("figs/", "Ins_out_counts_npz_colors_stripes.png"), width=10, height=8,
+ggsave(paste0("figs/", "Ins_out_counts_npz_colors_gray.png"), width=10, height=8,
        units="in", dpi=300)
 
 ```
@@ -764,14 +764,14 @@ ggplot(data = all_ves_long |>
            fill = network),
            position = position_stack(),
            show.legend = FALSE) +
-  geom_col_pattern(aes(x = npz_id,
-           y = ves_counts_diverge), 
-           position = position_stack(),
-                   pattern_density = 0.1,
-    fill = NA,
-    pattern_fill = "black",
-    pattern_colour = NA,
-    show.legend = FALSE)+
+  # geom_col_pattern(aes(x = npz_id,
+  #          y = ves_counts_diverge), 
+  #          position = position_stack(),
+  #                  pattern_density = 0.1,
+  #   fill = NA,
+  #   pattern_fill = "black",
+  #   pattern_colour = NA,
+  #   show.legend = FALSE)+
   coord_flip()+
   scale_y_continuous(limits = c(-75, 50),
                      breaks = breakvals_trans,
@@ -800,7 +800,7 @@ ggplot(data = all_ves_long |>
 
 
 ```{r save trans-man plot}
-ggsave(paste0("figs/", "Transit_maneuver_counts_color_stripes_npz.png"), width=10, height=8,
+ggsave(paste0("figs/", "Transit_maneuver_counts_color_npz.png"), width=10, height=8,
        units="in", dpi=300)
 
 ```
