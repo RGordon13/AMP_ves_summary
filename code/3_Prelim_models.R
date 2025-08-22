@@ -42,12 +42,28 @@ theme_set(theme_classic(base_size = 14))
 # Load dataset ------------------------------------------------------------
 
 
-vessels <- read_csv("data_inputs/hourly_pres_allsites_local.csv") |>
+vessels <- read_csv("data/All_sites_tables/hourly_pres_allsites_local.csv") |>
   # set order of weekdays
   mutate("Weekday_fac" = as_factor(Weekday),
          "Weekday_fac" = fct_relevel(Weekday_fac, c("Sunday","Monday","Tuesday","Wednesday",
                                                     "Thursday","Friday","Saturday")))
+all_ves_wkdy <- read_csv("output/All_ves_by_weekday.csv")
 
+ves_weekday <- all_ves_wkdy |>
+  group_by(network, npz_id, Dep_ID, Dep, Date_week) |>
+  # get n_days per week in dataset
+  summarize(n_days = n(),
+            week_sum = sum(Total_ves_dep, na.rm = TRUE)) |>
+  # only keep full weeks n_days == 7
+  # only keep weeks with presence
+  filter(n_days == 7,
+         week_sum > 0) |>
+  # get original weekday counts
+  left_join(all_ves_wkdy)|>
+  mutate("Weekday_fac" = as_factor(Weekday),
+         "Weekday_fac" = fct_relevel(Weekday_fac, c("Su","M","T","W",
+                                                    "Th","F","Sa")),
+         npz_dep = as_factor(paste0(npz_id, Dep_ID)))
 
 # Modeling ----------------------------------------------------------------
 
@@ -59,57 +75,26 @@ vessels <- read_csv("data_inputs/hourly_pres_allsites_local.csv") |>
 
 
 
-
-
-# # summarize data by site & weekday
-# vessel_weekday <- vessels |>
-#   group_by(SiteID, Weekday) |>
-#   summarize("sum_vessels" = sum(Total_Vessels, na.rm = TRUE),
-#             "n_obs" = n()) |>
-#   mutate("Weekday_fac" = as_factor(Weekday),
-#          "Weekday_fac" = fct_relevel(Weekday_fac, c("Sunday","Monday","Tuesday","Wednesday",
-#                                        "Thursday","Friday","Saturday")))
-# vessel_site <- vessels |>
-#   group_by(SiteID) |>
-#   summarize("sum_vessels" = sum(Total_Vessels, na.rm = TRUE),
-#             "n_obs" = n())
-
-ggplot(data = vessels, 
-       aes(x = Weekday_fac,
-           y = Total_Vessels,
-           fill = SiteID)) +
-  geom_col() +
-  facet_wrap(vars(SiteID))
-
-
-
 # 2. Fit model
-
-
-# fit a regular lm for funsies
-
-ves_weekday_lm <- lm(Total_Vessels ~ Weekday_fac,
-                     data = vessels)
-summary(ves_weekday_lm)
-
 
 # try glm with Poisson error for count data
 
 # effect of weekday on total vessels
-ves_weekday_glm <- glm(Total_Vessels ~ Weekday_fac, 
+ves_weekday_glm <- glm(Total_ves_dep ~ Weekday_fac*npz_dep, 
                        family = poisson(link = "log"),
-                       data = vessels)
+                       data = ves_weekday)
 summary(ves_weekday_glm)
 
+check_model(ves_weekday_glm)
 
 ### try mixed effects model next
 
 # vessels ~ weekday + 1|SiteID
 
-ves_weekday_glmm <- glmmTMB::glmmTMB(Total_Vessels ~ Weekday_fac +
-                                       (1|SiteID),
+ves_weekday_glmm <- glmmTMB::glmmTMB(Total_ves_dep ~ Weekday_fac*npz_dep +
+                                       (1|network),
                                      family = poisson(link = "log"),
-                                     data = vessels)
+                                     data = ves_weekday)
 summary(ves_weekday_glmm)
 
 # Family: poisson  ( log )

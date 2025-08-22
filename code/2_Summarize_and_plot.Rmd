@@ -16,7 +16,7 @@ tidyverse_short<-c("broom","cli","crayon","dbplyr","dplyr","dtplyr","forcats","g
 lapply(tidyverse_short, require, character.only = TRUE) 
 
 library(scales)
-library(ggalt)
+# library(ggalt)
 # library(ggsci)
 library(ggdist)
 library(ggh4x) # nested faceting
@@ -523,102 +523,6 @@ Of vessels suitable for propagation analysis, what proportion are estimated to o
 
 ```{r div bar by npz}
 
-####
-# Diverging bar plot - NPZ
-#### 
-
-# 
-# breakvals <- seq(-200, 800, 200)
-# 
-# ggplot(data = all_ves_long |> 
-#          filter(Ves_behav == "total_outside" |
-#                Ves_behav == "Total_inside",
-#                npz_id != "SWCMP"),
-#        aes(x = npz_id,
-#            y = ves_counts_diverge,
-#            fill = Ves_behav)) +
-#   geom_col(position = position_stack(reverse = TRUE)) +
-#   coord_flip()+
-#   scale_y_continuous(limits = c(-200, 800),
-#                      breaks = breakvals, 
-#                      labels = abs(breakvals))+
-#   scale_fill_manual(values = c("black","grey75"),
-#                        labels = c(">0.75" , "\u2264 0.75"))+
-#   labs(y = "N vessels",
-#        fill = "Probability of vessel\nwithin NPZ",
-#        title = "") +
-#   facet_nested(rows = vars(network, npz_id, Dep_ID), 
-#                nest_line = element_line(),
-#                scales = "free_y",
-#                switch = "y") +
-#   theme(
-#     axis.text.x = element_text(face = "bold"),
-#     axis.title.y = element_blank(),
-#     axis.text.y = element_blank(),
-#     axis.ticks.y = element_blank(),
-#     strip.background = element_blank(),
-#     strip.text.y = element_text(face = "bold")
-#     )
-#   
-# ggsave(paste0("figs/", "Ins_out_counts_npz.png"), width=10, height=8,
-#        units="in", dpi=300)
-# 
-# # Small vessels inside-outside
-# 
-# breakvals_small <- seq(-600, 600, 200)
-# 
-# ggplot(data = all_ves_long |> 
-#          filter(Ves_behav == "total_out_small" |
-#                Ves_behav == "Total_inside_small",
-#                npz_id != "SWCMP"),
-#        aes(x = npz_id,
-#            y = ves_counts_diverge,
-#            fill = Ves_behav)) +
-#   geom_col(position = position_stack(reverse = TRUE)) +
-#   coord_flip()+
-#   scale_y_continuous(limits = c(-600, 600),
-#                      breaks = breakvals_small, 
-#                      labels = abs(breakvals_small))+
-#   scale_fill_viridis_d(direction = -1)+
-#   labs(y = "N vessels",
-#        fill = "Inside vs. Outside",
-#        title = "Inside-Outside Counts (Small Vessels)") +
-#    facet_nested(rows = vars(network, npz_id, Dep_ID), 
-#                nest_line = element_line(),
-#                scales = "free_y",
-#                switch = "y") +
-#   theme(
-#     axis.text.x = element_text(face = "bold"),
-#     axis.title.y = element_blank(),
-#     axis.text.y = element_blank(),
-#     axis.ticks.y = element_blank(),
-#     strip.background = element_blank(),
-#     strip.text.y = element_text(face = "bold")
-#     )
-# 
-# ggsave(paste0("figs/", "Ins_out_counts_small_npz.png"), width=10, height=8,
-#        units="in", dpi=300)
-# 
-# 
-# # make table of inside vs. outside
-# ins_out_table <- all_ves_long |> 
-#   filter(Ves_behav == "total_outside" |
-#            Ves_behav == "Total_inside"| 
-#            Ves_behav == "total_out_small" |
-#            Ves_behav == "Total_inside_small",
-#          npz_id != "SWCMP") |>
-#   pivot_wider(names_from = Ves_behav, 
-#               id_cols = Dep, 
-#               values_from = Ves_counts) |>
-#   relocate(total_outside, .after = Total_inside) |>
-#   rename("Total inside" = "Total_inside",
-#          "Total inside (small)" = "Total_inside_small",
-#          "Total outside" = "total_outside",
-#          "Total outside (small)" = "total_out_small",
-#          "Deployment" = "Dep")
-# 
-# knitr::kable(ins_out_table, caption = "Vessel counts inside and outside NPZ boundaries")
-
 
 
 ```
@@ -628,41 +532,6 @@ Of vessels suitable for propagation analysis, what proportion are estimated to o
 Similar to plot above but for transit vs. maneuver instead of inside vs. outside
 
 ```{r div plot maneuvers}
-# 
-# breakvals_trans <- seq(-100,50,25)
-# ggplot(data = all_ves_long |> 
-#          filter(Ves_behav == "Inside_transit" |
-#                Ves_behav == "Inside_maneuver",
-#                npz_id != "SWCMP",
-#                npz_id != "MMP"),
-#        aes(x = npz_id,
-#            y = ves_counts_diverge,
-#            fill = Ves_behav)) +
-#   geom_col(position = position_stack()) +
-#   coord_flip()+
-#   scale_y_continuous(limits = c(-75, 50),
-#                      breaks = breakvals_trans,
-#                      labels = abs(breakvals_trans))+
-#   scale_fill_manual(values = c("black","grey75"),
-#                        labels = c("Maneuver" , "Transit"))+
-#   labs(y = "N vessels",
-#        fill = "Vessel Behavior\nInside NPZ",
-#        title = "") +
-#   facet_nested(rows = vars(network, npz_id, Dep_ID), 
-#                nest_line = element_line(),
-#                scales = "free_y",
-#                switch = "y") +
-#   theme(
-#     axis.text.x = element_text(face = "bold"),
-#     axis.title.y = element_blank(),
-#     axis.text.y = element_blank(),
-#     axis.ticks.y = element_blank(),
-#     strip.background = element_blank(),
-#     strip.text.y = element_text(face = "bold")
-#     )
-#   
-# ggsave(paste0("figs/", "Transit_maneuver_counts_npz.png"), width=10, height=8,
-#        units="in", dpi=300)
 
 ```
 
@@ -806,7 +675,79 @@ ggsave(paste0("figs/", "Transit_maneuver_counts_color_npz.png"), width=10, heigh
 ```
 
 
+## Test proportions across NPZs
 
+```{r chisq}
+
+# proportion inside
+
+# test across NPZs
+
+inout_freq_table <- all_ves_long |>
+  mutate(npz_dep = paste0(npz_id, Dep_ID)) |>
+  filter(Ves_behav == "Total_inside" | Ves_behav == "total_outside") |>
+  group_by(npz_dep, Ves_behav) |> 
+  summarise(total = sum(Ves_counts)) |>
+  pivot_wider(names_from = Ves_behav,
+              values_from = total)|>
+  mutate(prop_inside = Total_inside/total_outside)
+
+fisher.test(inout_freq_table[2:3], simulate.p.value = TRUE)
+# data:  inout_freq_table[2:3]
+# p-value = 0.0004998
+# alternative hypothesis: two.sided
+
+
+# test across networks
+inout_freq_network <- all_ves_long |>
+  mutate(npz_dep = paste0(npz_id, Dep_ID)) |>
+  filter(Ves_behav == "Total_inside" | Ves_behav == "total_outside") |>
+  group_by(network, Ves_behav) |> 
+  summarise(total = sum(Ves_counts)) |>
+  pivot_wider(names_from = Ves_behav,
+              values_from = total) |>
+  mutate(prop_inside = Total_inside/total_outside)
+
+fisher.test(inout_freq_network[2:3])
+# data:  inout_freq_network[2:3]
+# p-value < 2.2e-16
+# alternative hypothesis: two.sided
+
+# proportion maneuvers
+
+maneuver_freq_table <- all_ves_long |>
+  mutate(npz_dep = paste0(npz_id, Dep_ID)) |>
+  filter(Ves_behav == "Total_inside" | Ves_behav == "Inside_maneuver") |>
+  group_by(npz_dep, Ves_behav) |> 
+  summarise(total = sum(Ves_counts)) |>
+  pivot_wider(names_from = Ves_behav,
+              values_from = total)|>
+  mutate(prop_inside = Inside_maneuver/Total_inside)
+
+fisher.test(maneuver_freq_table[2:3], simulate.p.value = TRUE)
+# data:  maneuver_freq_network[2:3]
+# p-value = 0.7973
+# alternative hypothesis: two.sided
+
+# by network
+maneuver_freq_network <- all_ves_long |>
+  mutate(npz_dep = paste0(npz_id, Dep_ID)) |>
+  filter(Ves_behav == "Total_inside" | Ves_behav == "Inside_maneuver") |>
+  group_by(network, Ves_behav) |> 
+  summarise(total = sum(Ves_counts)) |>
+  pivot_wider(names_from = Ves_behav,
+              values_from = total)|>
+  mutate(prop_inside = Inside_maneuver/Total_inside)
+
+fisher.test(maneuver_freq_network[2:3])
+# data:  maneuver_freq_network[2:3]
+# p-value = 0.7973
+# alternative hypothesis: two.sided
+
+
+
+
+```
 
 
 
@@ -844,8 +785,9 @@ all_ves_wkdy <- all_sites_hp |>
 levels(all_ves_wkdy$Weekday) <- c("M","T","W","Th","F","Sa","Su")
 
 
+
 # Weekly mean-adjusted counts for total vessels
-wkly_means_tot <- all_ves_wkdy |>
+wkly_mean_adj_tot <- all_ves_wkdy |>
   # group to week level
   group_by(network, npz_id, Dep_ID, Dep, Date_week) |>
   # get n_days per week in dataset
@@ -862,7 +804,10 @@ wkly_means_tot <- all_ves_wkdy |>
   # calculate weekly mean of total presence for days with presence
   mutate(mean_tot = mean(Total_ves_dep, na.rm = TRUE),
          # calculate mean-adjusted counts per weekday
-         tot_wkdy_adj = Total_ves_dep - mean_tot) |>
+         tot_wkdy_adj = Total_ves_dep - mean_tot) 
+
+# summarize mean & SD for plots
+wkly_means_tot <- wkly_mean_adj_tot |>
   group_by(network, npz_id, Dep_ID, Weekday) |>
   # get mean of mean-adjusted counts for each weekday
   summarise(mean_wkdy_adj = mean(tot_wkdy_adj, na.rm = TRUE)) |>
@@ -874,7 +819,7 @@ wkly_means_tot <- all_ves_wkdy |>
 
 
 # Weekly mean-adjusted counts, inside vessels
-wkly_means_ins <- all_ves_wkdy |>
+wkly_mean_adj_ins <- all_ves_wkdy |>
   # group to week level
   group_by(network, npz_id, Dep_ID, Dep, Date_week) |>
   # get n_days per week in dataset
@@ -891,7 +836,9 @@ wkly_means_ins <- all_ves_wkdy |>
   # calculate weekly mean of total presence inside for days with presence inside
   mutate(mean_tot = mean(Total_inside, na.rm = TRUE),
          # calculate mean-adjusted counts per weekday
-         tot_wkdy_adj = Total_inside - mean_tot) |>
+         tot_wkdy_adj = Total_inside - mean_tot) 
+  
+  wkly_means_ins <- wkly_mean_adj_ins |>
   group_by(network, npz_id, Dep_ID, Weekday) |>
   # get mean of mean-adjusted counts for each weekday
   summarise(mean_wkdy_adj = mean(tot_wkdy_adj, na.rm = TRUE)) |>
@@ -901,7 +848,7 @@ wkly_means_ins <- all_ves_wkdy |>
 
 
 # Weekly mean-adjusted counts, maneuvers
-wkly_means_ins_man <- all_ves_wkdy |>
+wkly_mean_adj_ins_man <- all_ves_wkdy |>
   # group to week level
   group_by(network, npz_id, Dep_ID, Dep, Date_week) |>
   # get n_days per week in dataset
@@ -918,7 +865,10 @@ wkly_means_ins_man <- all_ves_wkdy |>
   # calculate weekly mean of total presence for days with presence of maneuvers
   mutate(mean_man = mean(Inside_maneuver, na.rm = TRUE),
          # calculate mean-adjusted counts per weekday
-         man_wkdy_adj = Inside_maneuver - mean_man) |>
+         man_wkdy_adj = Inside_maneuver - mean_man)
+  
+  
+  wkly_means_ins_man <- wkly_mean_adj_ins_man |>
   group_by(network, npz_id, Dep_ID, Weekday) |>
   # get mean of mean-adjusted counts for each weekday
   summarise(mean_man_wkdy_adj = mean(man_wkdy_adj, na.rm = TRUE)) |>
@@ -929,6 +879,112 @@ wkly_means_ins_man <- all_ves_wkdy |>
 
 
 ```
+
+### Weekday 2-way ANOVA
+
+```{r weekday anovas}
+
+# total counts
+
+wkly_mean_adj_tot <- wkly_mean_adj_tot |>
+  mutate(npz_dep = as_factor(paste0(npz_id, Dep_ID)))
+
+# deployment + Weekday
+week_aov <- aov(tot_wkdy_adj ~ npz_dep + Weekday, 
+                data = wkly_mean_adj_tot)
+
+# deployment*Weekday
+week_aov_int <- aov(tot_wkdy_adj ~ npz_dep*Weekday, 
+                data = wkly_mean_adj_tot)
+
+AICc(week_aov, week_aov_int)
+
+# Tukey HSD for additive model (lower AIC than intxn)
+
+tukey_week <- tidy(TukeyHSD(week_aov)) |>
+  filter(adj.p.value <= 0.10)
+
+
+
+# inside vessels
+
+wkly_mean_adj_ins <- wkly_mean_adj_ins |>
+  mutate(npz_dep = as_factor(paste0(npz_id, Dep_ID)))
+
+# 2-way ANOVA deployment + Weekday
+week_ins_aov <- aov(tot_wkdy_adj ~ npz_dep + Weekday, 
+                data = wkly_mean_adj_ins)
+
+# 2-way ANOVA deployment*Weekday
+week_ins_aov_int <- aov(tot_wkdy_adj ~ npz_dep*Weekday, 
+                data = wkly_mean_adj_ins)
+
+AICc(week_ins_aov, week_ins_aov_int)
+#                  df     AICc
+# week_ins_aov     18 1689.987
+# week_ins_aov_int 78 1738.303
+
+
+# Tukey HSD for additive model (lower AIC than intxn)
+
+tukey_week_ins <- tidy(TukeyHSD(week_ins_aov)) |>
+  filter(adj.p.value <= 0.10)
+
+
+
+# maneuvers
+wkly_mean_adj_ins_man <- wkly_mean_adj_ins_man |>
+  mutate(npz_dep = as_factor(paste0(npz_id, Dep_ID)))
+
+# 2-way ANOVA deployment + Weekday
+week_man_aov <- aov(man_wkdy_adj ~ npz_dep + Weekday, 
+                data = wkly_mean_adj_ins_man)
+
+# 2-way ANOVA deployment*Weekday
+week_man_aov_int <- aov(man_wkdy_adj ~ npz_dep*Weekday, 
+                data = wkly_mean_adj_ins_man)
+
+AICc(week_man_aov, week_man_aov_int)
+
+
+tukey_week_man <- tidy(TukeyHSD(week_man_aov)) |>
+  filter(adj.p.value <= 0.10)
+
+
+```
+
+
+```{r weekday KW}
+
+# CGMP 201807
+kw_cgmp201807 <- kruskal.test(tot_wkdy_adj ~ Weekday,
+                              data = wkly_mean_adj_tot |> 
+                                filter(npz_dep == "CGMP201807"))
+tidy(kw_cgmp201807)
+
+
+# CGMP 201904
+kw_cgmp201904 <- kruskal.test(tot_wkdy_adj ~ Weekday,
+                              data = wkly_mean_adj_tot |> 
+                                filter(npz_dep == "CGMP201904"))
+tidy(kw_cgmp201904)
+
+# CGMP 201812
+kw_cgmp201812 <- kruskal.test(tot_wkdy_adj ~ Weekday,
+                              data = wkly_mean_adj_tot |> 
+                                filter(npz_dep == "CGMP201812"))
+tidy(kw_cgmp201812)
+
+
+
+
+
+
+
+```
+
+
+
 
 
 ### Plot weekday mean-adjusted counts -- Total & Inside
