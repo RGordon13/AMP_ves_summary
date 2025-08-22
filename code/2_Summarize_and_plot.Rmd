@@ -24,6 +24,8 @@ library(ggpubr) # additional options for publication plots
 library(suncalc) # sunrise & sunset calculations
 library(geosphere) 
 library(ggpattern)
+library(MuMIn) # AICc values
+
 
 theme_set(theme_bw(
   base_size = 14
@@ -725,8 +727,8 @@ maneuver_freq_table <- all_ves_long |>
   mutate(prop_inside = Inside_maneuver/Total_inside)
 
 fisher.test(maneuver_freq_table[2:3], simulate.p.value = TRUE)
-# data:  maneuver_freq_network[2:3]
-# p-value = 0.7973
+# data:  maneuver_freq_table[2:3]
+# p-value = 0.003998
 # alternative hypothesis: two.sided
 
 # by network
@@ -951,33 +953,204 @@ tukey_week_man <- tidy(TukeyHSD(week_man_aov)) |>
   filter(adj.p.value <= 0.10)
 
 
+
+# try "type 3" anova for unbalanced design
+library(car)
+anova_t3_tot <- Anova(lm(tot_wkdy_adj ~ npz_dep + Weekday, 
+                data = wkly_mean_adj_tot,
+contrasts=list(npz_dep=contr.sum, Weekday=contr.sum)),
+type=3) 
+
+# Pretty much gives same results but is probably more appropriate test
+
+# Anova Table (Type III tests)
+# 
+# Response: tot_wkdy_adj
+#              Sum Sq  Df F value    Pr(>F)    
+# (Intercept)     0.0   1  0.0000         1    
+# npz_dep         0.0  12  0.0000         1    
+# Weekday      1295.6   6  9.3619 5.424e-10 ***
+# Residuals   21520.1 933                      
+# ---
+# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+
 ```
 
-
+### Weekday KW tests by site
 ```{r weekday KW}
 
-# CGMP 201807
+# CGMP 201807 -- NS
 kw_cgmp201807 <- kruskal.test(tot_wkdy_adj ~ Weekday,
                               data = wkly_mean_adj_tot |> 
                                 filter(npz_dep == "CGMP201807"))
 tidy(kw_cgmp201807)
 
-
-# CGMP 201904
-kw_cgmp201904 <- kruskal.test(tot_wkdy_adj ~ Weekday,
-                              data = wkly_mean_adj_tot |> 
-                                filter(npz_dep == "CGMP201904"))
-tidy(kw_cgmp201904)
-
-# CGMP 201812
+# CGMP 201812 -- NS
 kw_cgmp201812 <- kruskal.test(tot_wkdy_adj ~ Weekday,
                               data = wkly_mean_adj_tot |> 
                                 filter(npz_dep == "CGMP201812"))
 tidy(kw_cgmp201812)
 
+# CGMP 201904 -- NS
+kw_cgmp201904 <- kruskal.test(tot_wkdy_adj ~ Weekday,
+                              data = wkly_mean_adj_tot |> 
+                                filter(npz_dep == "CGMP201904"))
+tidy(kw_cgmp201904)
+
+
+# SIMP 201808
+kw_simp201808 <- kruskal.test(tot_wkdy_adj ~ Weekday,
+                              data = wkly_mean_adj_tot |> 
+                                filter(npz_dep == "SIMP201808"))
+kw_simp201808
+# data:  tot_wkdy_adj by Weekday
+# Kruskal-Wallis chi-squared = 12.902, df = 6, p-value = 0.04462
+
+simp201808_wkly_mean_adj_tot <- wkly_mean_adj_tot |>
+  filter(npz_dep == "SIMP201808")
+
+pairwise.wilcox.test(x = simp201808_wkly_mean_adj_tot$tot_wkdy_adj, 
+                       g = simp201808_wkly_mean_adj_tot$Weekday,
+                       p.adjust.method = "bonf")
+# no pairwise comparisons sig at alpha=0.05
+# Thurs-Mon p=0.08
 
 
 
+# SIMP 201812 -- NS
+kw_simp201812 <- kruskal.test(tot_wkdy_adj ~ Weekday,
+                              data = wkly_mean_adj_tot |> 
+                                filter(npz_dep == "SIMP201812"))
+kw_simp201812
+
+
+# SIMP 201906 -- NS
+kw_simp201906 <- kruskal.test(tot_wkdy_adj ~ Weekday,
+                              data = wkly_mean_adj_tot |> 
+                                filter(npz_dep == "SIMP201906"))
+kw_simp201906
+
+
+# DMP202009
+kw_DMP202009 <- kruskal.test(tot_wkdy_adj ~ Weekday,
+                              data = wkly_mean_adj_tot |> 
+                                filter(npz_dep == "DMP202009"))
+kw_DMP202009
+# data:  tot_wkdy_adj by Weekday
+# Kruskal-Wallis chi-squared = 20.601, df = 6, p-value = 0.002163
+
+dmp_wkly_mean_adj_tot <- wkly_mean_adj_tot |>
+  filter(npz_dep == "DMP202009")
+
+pairwise.wilcox.test(x = dmp_wkly_mean_adj_tot$tot_wkdy_adj, 
+                       g = dmp_wkly_mean_adj_tot$Weekday,
+                       p.adjust.method = "bonf")
+
+# 
+#    M     T     W     Th    F     Sa   
+# T  1.000 -     -     -     -     -    
+# W  0.113 1.000 -     -     -     -    
+# Th 0.058 1.000 1.000 -     -     -    
+# F  0.954 1.000 1.000 1.000 -     -    
+# Sa 1.000 1.000 0.171 0.051 1.000 -    
+# Su 1.000 1.000 0.397 0.097 1.000 1.000
+
+
+
+# NMP201909 -- NS
+kw_NMP201909 <- kruskal.test(tot_wkdy_adj ~ Weekday,
+                              data = wkly_mean_adj_tot |> 
+                                filter(npz_dep == "NMP201909"))
+kw_NMP201909
+
+
+# GMP202201
+kw_GMP202201 <- kruskal.test(tot_wkdy_adj ~ Weekday,
+                              data = wkly_mean_adj_tot |> 
+                                filter(npz_dep == "GMP202201"))
+kw_GMP202201
+# data:  tot_wkdy_adj by Weekday
+# Kruskal-Wallis chi-squared = 14.347, df = 6, p-value = 0.02599
+
+
+gmp_wkly_mean_adj_tot <- wkly_mean_adj_tot |>
+  filter(npz_dep == "GMP202201")
+
+pairwise.wilcox.test(x = gmp_wkly_mean_adj_tot$tot_wkdy_adj, 
+                       g = gmp_wkly_mean_adj_tot$Weekday,
+                       p.adjust.method = "bonf")
+#    M    T    W    Th   F    Sa  
+# T  1.00 -    -    -    -    -   
+# W  1.00 1.00 -    -    -    -   
+# Th 1.00 1.00 1.00 -    -    -   
+# F  0.03 0.74 1.00 1.00 -    -   
+# Sa 0.71 1.00 1.00 1.00 1.00 -   
+# Su 0.35 1.00 1.00 1.00 1.00 1.00
+
+
+
+# JMP202201 -- NS
+
+kw_JMP202201 <- kruskal.test(tot_wkdy_adj ~ Weekday,
+                              data = wkly_mean_adj_tot |> 
+                                filter(npz_dep == "JMP202201"))
+kw_JMP202201
+
+
+# MMP202002
+
+kw_MMP202002 <- kruskal.test(tot_wkdy_adj ~ Weekday,
+                              data = wkly_mean_adj_tot |> 
+                                filter(npz_dep == "MMP202002"))
+kw_MMP202002
+# data:  tot_wkdy_adj by Weekday
+# Kruskal-Wallis chi-squared = 15.188, df = 6, p-value = 0.01885
+
+
+mmp_wkly_mean_adj_tot <- wkly_mean_adj_tot |>
+  filter(npz_dep == "MMP202002")
+
+pairwise.wilcox.test(x = mmp_wkly_mean_adj_tot$tot_wkdy_adj, 
+                       g = mmp_wkly_mean_adj_tot$Weekday,
+                       p.adjust.method = "bonf")
+# no pairwise were sig. -- overall probably sig because no presence most days
+
+
+
+# SWCMP202201 -- NS
+
+kw_SWCMP202201 <- kruskal.test(tot_wkdy_adj ~ Weekday,
+                              data = wkly_mean_adj_tot |> 
+                                filter(npz_dep == "SWCMP202201"))
+kw_SWCMP202201
+
+
+# TRMP202105
+
+kw_TRMP202105 <- kruskal.test(tot_wkdy_adj ~ Weekday,
+                              data = wkly_mean_adj_tot |> 
+                                filter(npz_dep == "TRMP202105"))
+kw_TRMP202105
+# data:  tot_wkdy_adj by Weekday
+# Kruskal-Wallis chi-squared = 26.85, df = 6, p-value = 0.0001545
+
+
+trmp_wkly_mean_adj_tot <- wkly_mean_adj_tot |>
+  filter(npz_dep == "TRMP202105")
+
+pairwise.wilcox.test(x = trmp_wkly_mean_adj_tot$tot_wkdy_adj, 
+                       g = trmp_wkly_mean_adj_tot$Weekday,
+                       p.adjust.method = "bonf")
+
+#    M      T      W      Th     F      Sa    
+# T  1.0000 -      -      -      -      -     
+# W  0.8378 1.0000 -      -      -      -     
+# Th 0.0424 0.2491 1.0000 -      -      -     
+# F  0.0078 0.0588 1.0000 1.0000 -      -     
+# Sa 0.0250 0.1494 1.0000 1.0000 1.0000 -     
+# Su 1.0000 1.0000 1.0000 0.2200 0.0997 0.0811
 
 
 
