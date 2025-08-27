@@ -25,7 +25,7 @@ library(suncalc) # sunrise & sunset calculations
 library(geosphere) 
 library(ggpattern)
 library(MuMIn) # AICc values
-
+library(fmsb) # for pairwise fisher testing
 
 theme_set(theme_bw(
   base_size = 14
@@ -677,11 +677,12 @@ ggsave(paste0("figs/", "Transit_maneuver_counts_color_npz.png"), width=10, heigh
 ```
 
 
+
 ## Test proportions across NPZs
 
-```{r chisq}
+```{r fisher tests}
 
-# proportion inside
+# Proportion inside
 
 # test across NPZs
 
@@ -692,7 +693,8 @@ inout_freq_table <- all_ves_long |>
   summarise(total = sum(Ves_counts)) |>
   pivot_wider(names_from = Ves_behav,
               values_from = total)|>
-  mutate(prop_inside = Total_inside/total_outside)
+  mutate(total_vessels = sum(Total_inside, total_outside),
+    prop_inside = Total_inside/total_outside)
 
 fisher.test(inout_freq_table[2:3], simulate.p.value = TRUE)
 # data:  inout_freq_table[2:3]
@@ -700,53 +702,76 @@ fisher.test(inout_freq_table[2:3], simulate.p.value = TRUE)
 # alternative hypothesis: two.sided
 
 
-# test across networks
-inout_freq_network <- all_ves_long |>
-  mutate(npz_dep = paste0(npz_id, Dep_ID)) |>
-  filter(Ves_behav == "Total_inside" | Ves_behav == "total_outside") |>
-  group_by(network, Ves_behav) |> 
-  summarise(total = sum(Ves_counts)) |>
-  pivot_wider(names_from = Ves_behav,
-              values_from = total) |>
-  mutate(prop_inside = Total_inside/total_outside)
 
-fisher.test(inout_freq_network[2:3])
-# data:  inout_freq_network[2:3]
-# p-value < 2.2e-16
-# alternative hypothesis: two.sided
+
+# Proportion inside: Post hoc pairwise comparisons with Bonferonni correction 
+
+
+pairwise.fisher.test(x=inout_freq_table$Total_inside, n=inout_freq_table$total_vessels, p.adjust.method = "bonf")
+
+# 	Pairwise comparisons using Pairwise comparison of proportions (Fisher) 
+# 
+# data:  inout_freq_table$Total_inside out of inout_freq_table$total_vessels 
+ 
+#    1       2       3       4       5       6       7       8       9       10      11      12     
+# 2  1.00000 -       -       -       -       -       -       -       -       -       -       -      
+# 3  1.00000 1.00000 -       -       -       -       -       -       -       -       -       -      
+# 4  0.02460 0.64093 0.06302 -       -       -       -       -       -       -       -       -      
+# 5  < 2e-16 5.5e-13 < 2e-16 0.02166 -       -       -       -       -       -       -       -      
+# 6  0.00019 0.04629 0.00028 1.00000 0.00014 -       -       -       -       -       -       -      
+# 7  1.00000 1.00000 1.00000 1.00000 1.00000 1.00000 -       -       -       -       -       -      
+# 8  0.00285 0.10991 0.00843 1.00000 0.70579 1.00000 1.00000 -       -       -       -       -      
+# 9  0.09768 0.00179 0.00510 1.1e-07 < 2e-16 3.7e-12 1.00000 1.9e-08 -       -       -       -      
+# 10 1.00000 1.00000 1.00000 0.38032 8.3e-15 0.01061 1.00000 0.06187 0.00151 -       -       -      
+# 11 0.53075 0.00530 0.01473 2.2e-07 < 2e-16 6.7e-14 1.00000 3.3e-08 1.00000 0.00433 -       -      
+# 12 1.7e-14 6.6e-11 1.7e-14 0.02455 1.00000 0.00043 1.00000 0.54677 < 2e-16 6.1e-12 < 2e-16 -      
+# 13 5.7e-05 0.05522 0.00010 1.00000 9.9e-08 1.00000 1.00000 1.00000 1.8e-13 0.00702 < 2e-16 3.0e-06
+# 
+# P value adjustment method: bonferroni 
+
 
 # proportion maneuvers
 
 maneuver_freq_table <- all_ves_long |>
   mutate(npz_dep = paste0(npz_id, Dep_ID)) |>
-  filter(Ves_behav == "Total_inside" | Ves_behav == "Inside_maneuver") |>
+  filter(Ves_behav == "Inside_transit" | Ves_behav == "Inside_maneuver") |>
   group_by(npz_dep, Ves_behav) |> 
   summarise(total = sum(Ves_counts)) |>
   pivot_wider(names_from = Ves_behav,
               values_from = total)|>
-  mutate(prop_inside = Inside_maneuver/Total_inside)
+  mutate(total_inside = sum(Inside_transit, Inside_maneuver),
+    prop_maneuver = Inside_maneuver/total_inside)
 
 fisher.test(maneuver_freq_table[2:3], simulate.p.value = TRUE)
 # data:  maneuver_freq_table[2:3]
-# p-value = 0.003998
+# p-value = 0.004998
 # alternative hypothesis: two.sided
 
-# by network
-maneuver_freq_network <- all_ves_long |>
-  mutate(npz_dep = paste0(npz_id, Dep_ID)) |>
-  filter(Ves_behav == "Total_inside" | Ves_behav == "Inside_maneuver") |>
-  group_by(network, Ves_behav) |> 
-  summarise(total = sum(Ves_counts)) |>
-  pivot_wider(names_from = Ves_behav,
-              values_from = total)|>
-  mutate(prop_inside = Inside_maneuver/Total_inside)
-
-fisher.test(maneuver_freq_network[2:3])
-# data:  maneuver_freq_network[2:3]
-# p-value = 0.7973
-# alternative hypothesis: two.sided
+# Proportion maneuvers: Post hoc pairwise comparisons with Bonferonni correction 
 
 
+pairwise.fisher.test(x=maneuver_freq_table$Inside_maneuver, n=maneuver_freq_table$total_inside, p.adjust.method = "bonf")
+
+
+# 	Pairwise comparisons using Pairwise comparison of proportions (Fisher) 
+# 
+# data:  maneuver_freq_table$Inside_maneuver out of maneuver_freq_table$total_inside 
+# 
+#    1       2      3      4      5      6       7      8      9       10     11     12    
+# 2  1.0000  -      -      -      -      -       -      -      -       -      -      -     
+# 3  1.0000  1.0000 -      -      -      -       -      -      -       -      -      -     
+# 4  1.0000  1.0000 1.0000 -      -      -       -      -      -       -      -      -     
+# 5  1.0000  1.0000 1.0000 1.0000 -      -       -      -      -       -      -      -     
+# 6  1.0000  0.0170 0.0556 1.0000 1.0000 -       -      -      -       -      -      -     
+# 7  1.0000  1.0000 1.0000 1.0000 1.0000 1.0000  -      -      -       -      -      -     
+# 8  1.0000  1.0000 1.0000 1.0000 1.0000 1.0000  1.0000 -      -       -      -      -     
+# 9  1.0000  0.1660 0.5726 1.0000 1.0000 1.0000  1.0000 1.0000 -       -      -      -     
+# 10 0.1562  1.0000 1.0000 1.0000 1.0000 0.0025  1.0000 1.0000 0.0133  -      -      -     
+# 11 1.0e-07 0.3149 0.0015 0.4112 1.0000 2.8e-09 1.0000 1.0000 1.0e-09 0.7308 -      -     
+# 12 1.0000  1.0000 1.0000 1.0000 1.0000 1.0000  1.0000 1.0000 1.0000  1.0000 1.0000 -     
+# 13 4.2e-05 1.0000 0.0834 1.0000 1.0000 5.4e-07 1.0000 1.0000 1.2e-06 1.0000 1.0000 1.0000
+# 
+# P value adjustment method: bonferroni 
 
 
 ```
