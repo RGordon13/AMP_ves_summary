@@ -1566,11 +1566,12 @@ all_ves_gmt8 <- all_sites_hp |>
                                            Lat_DD, 
                                            Lon_DD, 
                                            keep = c("nauticalDawn","sunset"),
-                                           tz = "UTC")) |>
-  rowwise()|>
+                                           tz = "UTC"))
+
+all_ves_gmt8 <- all_ves_gmt8 |>
   mutate(nautDawn_UTC = twilight_times$nauticalDawn,
          nautDawn_loc = with_tz(nautDawn_UTC, tzone = "Etc/GMT-8"),
-         sunset_UTC = twilight_times$nauticalDusk,
+         sunset_UTC = twilight_times$sunset,
          sunset_loc = with_tz(sunset_UTC, tzone = "Etc/GMT-8")) |>
   mutate(
     light_reg = case_when(
