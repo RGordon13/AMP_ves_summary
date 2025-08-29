@@ -26,6 +26,7 @@ library(geosphere)
 library(ggpattern)
 library(MuMIn) # AICc values
 library(fmsb) # for pairwise fisher testing
+library(suntools)
 
 theme_set(theme_bw(
   base_size = 14
@@ -44,6 +45,13 @@ source("code/AMP_summary_ves_funs.R")
 
 all_sites_hp <- read_csv("data/All_sites_tables/hourly_pres_allsites_local.csv")
 all_sites_inout <- read_csv("data/All_sites_tables/total_ves_ins_out_by_site.csv")
+
+##### Deployment info ###
+depinfo <- read_csv("data/AMP_deployment_info.csv") |>
+  # add Dep column for joining with other tables
+  mutate(Dep = str_sub(PROJECT_NAME, 16, -1))
+
+
 
 ```
 
@@ -110,6 +118,15 @@ all_sites_hp <- all_sites_hp |>
       Site_ID == "SWS" ~ "SWCMP" 
     )
   )
+# get coords from depinfo
+dep_coords <- depinfo |>
+  select(Dep, Lat_DD, Lon_DD)
+
+# join coords to full df
+all_sites_hp <- all_sites_hp |>
+  left_join(dep_coords, by = "Dep")
+
+
 
 ```
 
@@ -118,11 +135,6 @@ all_sites_hp <- all_sites_hp |>
 Add in gaps and dates with coverage 
 
 ```{r effort and gaps, include=FALSE}
-
-##### Deployment info ###
-
-depinfo <- read_csv("data/AMP_deployment_info.csv")
-
 
 # create table of data gaps within nominal year (2000)
 
@@ -523,25 +535,6 @@ ggsave(paste0("figs/", "Total_recording_effort_1yr.png"), width=12, height=8,
 
 Of vessels suitable for propagation analysis, what proportion are estimated to occur within the NPZ boundaries?
 
-```{r div bar by npz}
-
-
-
-```
-
-### Diverging bar plot transit vs maneuver
-
-Similar to plot above but for transit vs. maneuver instead of inside vs. outside
-
-```{r div plot maneuvers}
-
-```
-
-
-## Try colors for diverging bar plots
-
-
-
 ```{r div bar by npz colors}
 
 ####
@@ -610,14 +603,15 @@ ggplot() +
     )
 ```
 
-```{r save pattern fig}
+```{r save div bar fig}
 ggsave(paste0("figs/", "Ins_out_counts_npz_colors_gray.png"), width=10, height=8,
        units="in", dpi=300)
 
 ```
 
 
-### Diverging bar plot with colors -- transit vs maneuver
+
+### Diverging bar plot transit vs maneuver
 
 Similar to plot above but for transit vs. maneuver instead of inside vs. outside
 
@@ -1538,22 +1532,116 @@ daily_means_ins_man <- all_ves_diel |>
 
 ```{r diel light regime}
 
+library(suncalc)
+
 # start by getting counts per light regime
-all_ves_light <- all_sites_hp |>
-  
-  #suntools package needs time zone
-  mutate(tz_local = case_when(
-    Dep == "CGMP_201807_CG" | Dep == "CGMP_201904_CG" | 
-      Dep == "SIMP_201808_EP" | Dep == "SIMP_201808_WP" | 
+all_ves_gmt10 <- all_sites_hp |>
+  filter(Dep == "CGMP_201807_CG" | Dep == "CGMP_201904_CG" | Dep == "SIMP_201808_EP" | Dep == "SIMP_201808_WP" | 
       Dep == "SIMP_201906_EP" | Dep == "SIMP_201906_WP" |
-      Dep == "MURAT_202002_MRE" | Dep == "MURAT_202002_MRW" ~ "Etc/GMT-10",
-    Dep == "CGMP_201212_CG" | 
-      Dep == "SIMP_201212_EP" | Dep == "SIMP_201212_WP" ~ "Etc/GMT-11",
-    TRUE ~ "Etc/GMT-8"
-  ),
-  # and gps coords
-  lat_dd = )
+      Dep == "MURAT_202002_MRE" | Dep == "MURAT_202002_MRW") |>
+  mutate(Hr_local_tz = force_tz(Hr_local, tzone = "Etc/GMT-10"))
+
+all_ves_gmt11 <- all_sites_hp |>
+  filter(Dep == "CGMP_201812_CG" | 
+      Dep == "SIMP_201812_EP" | Dep == "SIMP_201812_WP") |>
+  mutate(Hr_local_tz = force_tz(Hr_local, tzone = "Etc/GMT-11"))
+
+
+all_ves_gmt8 <- all_sites_hp |>
+  filter(Dep == "DAMPIER_202009_DNE" | 
+           Dep == "DAMPIER_202009_DSW" | Dep == "GEOGRAPHE_202201_GEO" | Dep == "JURIEN_202201_JNE"
+         | Dep == "JURIEN_202201_JSE"| Dep == "NINGALOO_201909_NGN"| Dep == "NINGALOO_201909_NGS" 
+         | Dep == "SWC_202201_SWS"| Dep == "TWOROCKS_202105_TRE"| Dep == "TWOROCKS_202105_TRW") |>
+  mutate(Hr_local_tz = force_tz(Hr_local, tzone = "Etc/GMT-8"),
+  Begin_Date_UTC = as_date(with_tz(Hr_local_tz, tzone = "UTC")))|>
+ 
+  rowwise()|>
+  # get elevation of sun based on GPS location & time
+  mutate(sun_elev_rad = suncalc::getSunlightPosition(Hr_local_tz, 
+                                                     Lat_DD, 
+                                                     Lon_DD, 
+                                                     keep = "altitude")$altitude,
+         sun_elev_deg = (sun_elev_rad*180)/(pi),
+         twilight_times = getSunlightTimes(date = Begin_Date_UTC, 
+                                           Lat_DD, 
+                                           Lon_DD, 
+                                           keep = c("nauticalDawn","sunset"),
+                                           tz = "UTC")) |>
+  rowwise()|>
+  mutate(nautDawn_UTC = twilight_times$nauticalDawn,
+         nautDawn_loc = with_tz(nautDawn_UTC, tzone = "Etc/GMT-8"),
+         sunset_UTC = twilight_times$nauticalDusk,
+         sunset_loc = with_tz(sunset_UTC, tzone = "Etc/GMT-8")) |>
+  mutate(
+    light_reg = case_when(
+      sun_elev_deg > 0 ~ "day",
+      sun_elev_deg < -12 ~ "night",
+      sun_elev_deg <= 0 & sun_elev_deg >= -12 & Hr_local_tz > nautDawn_loc ~ "dawn",
+      TRUE ~ "dusk"
+    ))
+
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  #suncalc package needs time zone
+  mutate(
+    Hr_local_tz = case_when(
+    Dep == "CGMP_201807_CG" | Dep == "CGMP_201904_CG" | Dep == "SIMP_201808_EP" | Dep == "SIMP_201808_WP" | 
+      Dep == "SIMP_201906_EP" | Dep == "SIMP_201906_WP" |
+      Dep == "MURAT_202002_MRE" | Dep == "MURAT_202002_MRW" ~ force_tz(Hr_local, tzone = "Etc/GMT-10")),
+    Hr_local_tz = case_when(
+    Dep == "CGMP_201812_CG" | 
+      Dep == "SIMP_201812_EP" | Dep == "SIMP_201812_WP" ~ force_tz(Hr_local, tzone = "Etc/GMT-11")),
+    Hr_local_tz = case_when(
+    Dep == "DAMPIER_202009_DNE" | 
+      Dep == "DAMPIER_202009_DSW" | Dep == "GEOGRAPHE_202201_GEO" | Dep == "JURIEN_202201_JNE"
+    | Dep == "JURIEN_202201_JSE"| Dep == "NINGALOO_201909_NGN"| Dep == "NINGALOO_201909_NGS" 
+    | Dep == "SWC_202201_SWS"| Dep == "TWOROCKS_202105_TRE"| Dep == "TWOROCKS_202105_TRW" ~ force_tz(Hr_local, tzone = "Etc/GMT-8")) 
+ 
+
+
+
+
+
+
+
+
+all_ves_light <- all_ves_light |>
+  rowwise()|>
+  mutate(nautDawn_UTC = twilight_times$nauticalDawn,
+         nautDawn_loc = with_tz(nautDawn_UTC, tzone = tz_local))
+
+,
+         nautDusk_UTC = twilight_times$nauticalDusk,
+         nautDusk_loc = with_tz(nautDusk_UTC, tzone = tz_local)) |>
+
+  mutate(
+         light_reg = case_when(
+           sun_elev_deg > 0 ~ "day",
+           sun_elev_deg < -12 ~ "night",
+           sun_elev_deg <= 0 & sun_elev_deg >= -12 & Hr_local_tz > nautDawn_loc ~ "dawn",
+           TRUE ~ "dusk"
+         ))
+
+
+
   
   group_by(network, npz_id, Dep_ID, Dep, Begin_Date_loc, Begin_Hour_loc)|>
   # get daily vessel counts per weekday: total, inside, inside_small, maneuver, maneuver_small
