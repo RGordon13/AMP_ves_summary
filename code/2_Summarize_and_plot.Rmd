@@ -2012,7 +2012,7 @@ ggplot(data = daily_means_tot,
        title = "")+
    facet_nested(rows = vars(network, npz_id, Dep_ID), 
                nest_line = element_line(),
-               scales = "fixed") +
+               scales = "free_y") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
@@ -2022,7 +2022,7 @@ ggplot(data = daily_means_tot,
 
 
 ```{r save combined diel plot}
-ggsave(paste0("figs/", "Diel_mean_adj_combined_allbars.png"), width=8, height=12, units="in", dpi=300)
+ggsave(paste0("figs/", "Diel_mean_adj_combined_allbars_free_y.png"), width=8, height=12, units="in", dpi=300)
 
 ```
 
@@ -2081,7 +2081,7 @@ ggplot() +
        title = "")+
    facet_nested(rows = vars(network, npz_id, Dep_ID), 
                nest_line = element_line(),
-               scales = "fixed") +
+               scales = "free_y") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
@@ -2091,7 +2091,7 @@ ggplot() +
 
 
 ```{r save combined diel maneuver plot}
-ggsave(paste0("figs/", "Diel_mean_adj_bars_maneuvers.png"), width=8, height=12, units="in", dpi=300)
+ggsave(paste0("figs/", "Diel_mean_adj_bars_maneuvers_free_y.png"), width=8, height=12, units="in", dpi=300)
 
 ```
 
