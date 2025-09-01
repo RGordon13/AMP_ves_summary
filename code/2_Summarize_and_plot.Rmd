@@ -26,6 +26,7 @@ library(geosphere)
 library(ggpattern)
 library(MuMIn) # AICc values
 library(fmsb) # for pairwise fisher testing
+library(performance) # check models
 library(suntools)
 
 theme_set(theme_bw(
@@ -707,19 +708,19 @@ pairwise.fisher.test(x=inout_freq_table$Total_inside, n=inout_freq_table$total_v
 # 
 # data:  inout_freq_table$Total_inside out of inout_freq_table$total_vessels 
  
-#    1       2       3       4       5       6       7       8       9       10      11      12     
-# 2  1.00000 -       -       -       -       -       -       -       -       -       -       -      
-# 3  1.00000 1.00000 -       -       -       -       -       -       -       -       -       -      
-# 4  0.02460 0.64093 0.06302 -       -       -       -       -       -       -       -       -      
-# 5  < 2e-16 5.5e-13 < 2e-16 0.02166 -       -       -       -       -       -       -       -      
-# 6  0.00019 0.04629 0.00028 1.00000 0.00014 -       -       -       -       -       -       -      
-# 7  1.00000 1.00000 1.00000 1.00000 1.00000 1.00000 -       -       -       -       -       -      
-# 8  0.00285 0.10991 0.00843 1.00000 0.70579 1.00000 1.00000 -       -       -       -       -      
-# 9  0.09768 0.00179 0.00510 1.1e-07 < 2e-16 3.7e-12 1.00000 1.9e-08 -       -       -       -      
-# 10 1.00000 1.00000 1.00000 0.38032 8.3e-15 0.01061 1.00000 0.06187 0.00151 -       -       -      
-# 11 0.53075 0.00530 0.01473 2.2e-07 < 2e-16 6.7e-14 1.00000 3.3e-08 1.00000 0.00433 -       -      
-# 12 1.7e-14 6.6e-11 1.7e-14 0.02455 1.00000 0.00043 1.00000 0.54677 < 2e-16 6.1e-12 < 2e-16 -      
-# 13 5.7e-05 0.05522 0.00010 1.00000 9.9e-08 1.00000 1.00000 1.00000 1.8e-13 0.00702 < 2e-16 3.0e-06
+#           1CGMP201807 2       3       4       5       6       7       8       9       10      11      12     
+# 2CGMP201812   1.00000 -       -       -       -       -       -       -       -       -       -       -      
+# 3CGMP201904   1.00000 1.00000 -       -       -       -       -       -       -       -       -       -      
+# 4DMP202009    0.02460 0.64093 0.06302 -       -       -       -       -       -       -       -       -      
+# 5GMP202201    < 2e-16 5.5e-13 < 2e-16 0.02166 -       -       -       -       -       -       -       -      
+# 6JMP202201    0.00019 0.04629 0.00028 1.00000 0.00014 -       -       -       -       -       -       -      
+# 7MMP202002    1.00000 1.00000 1.00000 1.00000 1.00000 1.00000 -       -       -       -       -       -      
+# 8NMP201909    0.00285 0.10991 0.00843 1.00000 0.70579 1.00000 1.00000 -       -       -       -       -      
+# 9SIMP201808   0.09768 0.00179 0.00510 1.1e-07 < 2e-16 3.7e-12 1.00000 1.9e-08 -       -       -       -      
+# 10SIMP201812  1.00000 1.00000 1.00000 0.38032 8.3e-15 0.01061 1.00000 0.06187 0.00151 -       -       -      
+# 11SIMP201906  0.53075 0.00530 0.01473 2.2e-07 < 2e-16 6.7e-14 1.00000 3.3e-08 1.00000 0.00433 -       -      
+# 12SWCMP202201 1.7e-14 6.6e-11 1.7e-14 0.02455 1.00000 0.00043 1.00000 0.54677 < 2e-16 6.1e-12 < 2e-16 -      
+# 13TRMP202105  5.7e-05 0.05522 0.00010 1.00000 9.9e-08 1.00000 1.00000 1.00000 1.8e-13 0.00702 < 2e-16 3.0e-06
 # 
 # P value adjustment method: bonferroni 
 
@@ -751,19 +752,19 @@ pairwise.fisher.test(x=maneuver_freq_table$Inside_maneuver, n=maneuver_freq_tabl
 # 
 # data:  maneuver_freq_table$Inside_maneuver out of maneuver_freq_table$total_inside 
 # 
-#    1       2      3      4      5      6       7      8      9       10     11     12    
-# 2  1.0000  -      -      -      -      -       -      -      -       -      -      -     
-# 3  1.0000  1.0000 -      -      -      -       -      -      -       -      -      -     
-# 4  1.0000  1.0000 1.0000 -      -      -       -      -      -       -      -      -     
-# 5  1.0000  1.0000 1.0000 1.0000 -      -       -      -      -       -      -      -     
-# 6  1.0000  0.0170 0.0556 1.0000 1.0000 -       -      -      -       -      -      -     
-# 7  1.0000  1.0000 1.0000 1.0000 1.0000 1.0000  -      -      -       -      -      -     
-# 8  1.0000  1.0000 1.0000 1.0000 1.0000 1.0000  1.0000 -      -       -      -      -     
-# 9  1.0000  0.1660 0.5726 1.0000 1.0000 1.0000  1.0000 1.0000 -       -      -      -     
-# 10 0.1562  1.0000 1.0000 1.0000 1.0000 0.0025  1.0000 1.0000 0.0133  -      -      -     
-# 11 1.0e-07 0.3149 0.0015 0.4112 1.0000 2.8e-09 1.0000 1.0000 1.0e-09 0.7308 -      -     
-# 12 1.0000  1.0000 1.0000 1.0000 1.0000 1.0000  1.0000 1.0000 1.0000  1.0000 1.0000 -     
-# 13 4.2e-05 1.0000 0.0834 1.0000 1.0000 5.4e-07 1.0000 1.0000 1.2e-06 1.0000 1.0000 1.0000
+#           1CGMP201807 2      3      4      5      6       7      8      9       10     11     12    
+# 2CGMP201812   1.0000  -      -      -      -      -       -      -      -       -      -      -     
+# 3CGMP201904   1.0000  1.0000 -      -      -      -       -      -      -       -      -      -     
+# 4DMP202009    1.0000  1.0000 1.0000 -      -      -       -      -      -       -      -      -     
+# 5GMP202201    1.0000  1.0000 1.0000 1.0000 -      -       -      -      -       -      -      -     
+# 6JMP202201    1.0000  0.0170 0.0556 1.0000 1.0000 -       -      -      -       -      -      -     
+# 7MMP202002    1.0000  1.0000 1.0000 1.0000 1.0000 1.0000  -      -      -       -      -      -     
+# 8NMP201909    1.0000  1.0000 1.0000 1.0000 1.0000 1.0000  1.0000 -      -       -      -      -     
+# 9SIMP201808   1.0000  0.1660 0.5726 1.0000 1.0000 1.0000  1.0000 1.0000 -       -      -      -     
+# 10SIMP201812  0.1562  1.0000 1.0000 1.0000 1.0000 0.0025  1.0000 1.0000 0.0133  -      -      -     
+# 11SIMP201906  1.0e-07 0.3149 0.0015 0.4112 1.0000 2.8e-09 1.0000 1.0000 1.0e-09 0.7308 -      -     
+# 12SWCMP202201 1.0000  1.0000 1.0000 1.0000 1.0000 1.0000  1.0000 1.0000 1.0000  1.0000 1.0000 -     
+# 13TRMP202105  4.2e-05 1.0000 0.0834 1.0000 1.0000 5.4e-07 1.0000 1.0000 1.2e-06 1.0000 1.0000 1.0000
 # 
 # P value adjustment method: bonferroni 
 
@@ -1038,7 +1039,7 @@ wkdy_plot_tempeast <- ggplot(data = wkly_means_tot |>
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
                nest_line = element_line(),
-               scales = "fixed") +
+               scales = "free_y") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
@@ -1112,7 +1113,7 @@ wkdy_plot_northwest <- ggplot(data = wkly_means_tot |>
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
                nest_line = element_line(),
-               scales = "fixed") +
+               scales = "free_y") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
@@ -1183,7 +1184,7 @@ wkdy_plot_southwest <- ggplot(data = wkly_means_tot |>
   facet_nested(rows = vars(npz_id, Dep_ID),
                # cols = vars(network),
                nest_line = element_line(),
-               scales = "fixed") +
+               scales = "free_y") +
   theme(
     axis.text.x = element_text(face = "bold"),
     strip.background = element_blank(),
@@ -1199,7 +1200,7 @@ ggarrange(wkdy_plot_tempeast, wkdy_plot_northwest, wkdy_plot_southwest,
 ```
 
 ```{r save ggarranged weekday plot}
-ggsave(paste0("figs/", "Weekday_mean_adj_horiz_panels_allbars.png"), width=12, height=8, units="in", dpi=300)
+ggsave(paste0("figs/", "Weekday_mean_adj_horiz_panels_allbars_free_y.png"), width=12, height=8, units="in", dpi=300)
 
 ```
 
@@ -1433,7 +1434,7 @@ all_ves_diel <- all_sites_hp |>
 
 
 # Calculate daily mean-adjusted counts per hour
-daily_means_tot <- all_ves_diel |>
+daily_mean_adj_tot <- all_ves_diel |>
   # group to date level
   group_by(network, npz_id, Dep_ID, Dep, Begin_Date_loc) |>
   # get n_hours per day
@@ -1451,7 +1452,9 @@ daily_means_tot <- all_ves_diel |>
   # calculate mean total presence per day with vessels
   mutate(mean_tot = mean(Total_ves_dep, na.rm = TRUE),
          # calculate mean-adjusted counts per hour
-         tot_diel_adj = Total_ves_dep - mean_tot) |>
+         tot_diel_adj = Total_ves_dep - mean_tot) 
+
+daily_means_tot <- daily_mean_adj_tot |>
   # group to hour level per deployment
   group_by(network, npz_id, Dep_ID, Begin_Hour_loc) |>
   # get mean of mean-adjusted ounts per hour
@@ -1463,7 +1466,7 @@ daily_means_tot <- all_ves_diel |>
 
 
 # Calculate daily mean-adjusted counts per hour for inside vessels
-daily_means_ins <- all_ves_diel |>
+daily_mean_adj_ins <- all_ves_diel |>
   # group to date level
   group_by(network, npz_id, Dep_ID, Dep, Begin_Date_loc) |>
   # get n_hours per day
@@ -1481,7 +1484,9 @@ daily_means_ins <- all_ves_diel |>
   # calculate mean total presence per day with vessels
   mutate(mean_ins = mean(Total_inside, na.rm = TRUE),
          # calculate mean-adjusted counts per hour
-         ins_diel_adj = Total_inside - mean_ins) |>
+         ins_diel_adj = Total_inside - mean_ins) 
+
+daily_means_ins <- daily_mean_adj_ins |>
   # group to hour level per deployment
   group_by(network, npz_id, Dep_ID, Begin_Hour_loc) |>
   # get mean of mean-adjusted ounts per hour
@@ -1494,7 +1499,7 @@ daily_means_ins <- all_ves_diel |>
 
 # Calculate diel mean-adusted counts for maneuvers
 
-daily_means_ins_man <- all_ves_diel |>
+daily_mean_adj_ins_man <- all_ves_diel |>
   # group to date level
   group_by(network, npz_id, Dep_ID, Dep, Begin_Date_loc) |>
   # get n_hours per day
@@ -1512,7 +1517,9 @@ daily_means_ins_man <- all_ves_diel |>
   # calculate mean total presence per day with vessels
   mutate(mean_ins_man = mean(Inside_maneuver, na.rm = TRUE),
          # calculate mean-adjusted counts per hour
-         ins_diel_man_adj = Inside_maneuver - mean_ins_man) |>
+         ins_diel_man_adj = Inside_maneuver - mean_ins_man)
+
+daily_means_ins_man <- daily_mean_adj_ins_man |>
   # group to hour level per deployment
   group_by(network, npz_id, Dep_ID, Begin_Hour_loc) |>
   # get mean of mean-adjusted ounts per hour
@@ -1528,7 +1535,7 @@ daily_means_ins_man <- all_ves_diel |>
 
 
 
-
+# Daily mean-adjusted presence by light regime
 
 ```{r diel light regime}
 
@@ -1570,9 +1577,6 @@ all_ves_gmt8 <- all_sites_hp |>
       # if it's twilight (-12 <= elev <= 0) and after noon, 'dusk'
       sun_elev_deg <= 0 & sun_elev_deg >= -12 & Begin_Hour_loc > 12 ~ "dusk"
     ))
-
-
-
 
 # start by getting counts per light regime
 all_ves_gmt10 <- all_sites_hp |>
@@ -1784,10 +1788,140 @@ ggplot(data = light_mean_adj_man,
 ```
 
 
+# Kruskal-Wallis for diel patterns
+```{r light tests}
+
+library(FSA)
+
+### by hour
+
+
+# all vessels
+kruskal.test(tot_diel_adj ~ factor(Begin_Hour_loc), 
+                data = daily_mean_adj_tot)
+
+dunn_hour_tot <- dunnTest(tot_diel_adj ~ factor(Begin_Hour_loc), 
+                          data = daily_mean_adj_tot,
+                          method = "holm")
+
+dunntable_tot <- as.data.frame(dunn_hour_tot$res)
+
+
+# inside
+kruskal.test(ins_diel_adj ~ factor(Begin_Hour_loc), 
+                data = daily_mean_adj_ins)
+
+dunn_hour_ins <- dunnTest(ins_diel_adj ~ factor(Begin_Hour_loc), 
+                data = daily_mean_adj_ins,
+                          method = "holm")
+
+dunntable_ins <- as.data.frame(dunn_hour_ins$res)
+
+
+# maneuver
+
+kruskal.test(ins_diel_man_adj ~ factor(Begin_Hour_loc), 
+                data = daily_mean_adj_ins_man)
+
+dunn_hour_man <- dunnTest(ins_diel_man_adj ~ factor(Begin_Hour_loc), 
+                data = daily_mean_adj_ins_man,
+                          method = "holm")
+
+dunntable_man <- as.data.frame(dunn_hour_man$res)
 
 
 
-```{r plotting diel}
+
+
+# by light regime
+
+light_mean_adj_tot <- light_mean_adj_tot |>
+  mutate(npz_dep = as_factor(paste0(npz_id, Dep_ID)),
+         light_reg = as_factor(light_reg))
+
+
+# all vessels
+kruskal.test(tot_light_adj ~ light_reg, 
+                data = light_mean_adj_tot)
+
+dunnTest(tot_light_adj ~ light_reg, 
+                data = light_mean_adj_tot,
+         method = "holm")
+
+#     Comparison          Z       P.unadj         P.adj
+# 1   dawn - day -33.369157 3.842517e-244 1.921258e-243*
+# 2  dawn - dusk   2.125593  3.353720e-02  3.353720e-02*
+# 3   day - dusk  35.494749 5.923338e-276 3.554003e-275*
+# 4 dawn - night  -9.584905  9.254284e-22  1.850857e-21*
+# 5  day - night  23.784252 4.860984e-125 1.944394e-124*
+# 6 dusk - night -11.710497  1.126170e-31  3.378509e-31*
+
+# all time periods sig different from one another for total vessels
+# Day sig. greater than all others
+# Night sig. greater than dusk & dawn
+# Dawn sig. greater than dusk
+
+
+
+
+# inside vessels
+
+
+kruskal.test(tot_light_adj ~ light_reg, 
+                data = light_mean_adj_ins)
+
+# data:  tot_light_adj by light_reg
+# Kruskal-Wallis chi-squared = 335.97, df = 3, p-value < 2.2e-16
+
+dunnTest(tot_light_adj ~ light_reg, 
+                data = light_mean_adj_ins,
+         method = "holm")
+
+#     Comparison           Z      P.unadj        P.adj
+# 1   dawn - day -15.2228933 2.492591e-52 1.246296e-51*
+# 2  dawn - dusk   0.3144364 7.531896e-01 7.531896e-01
+# 3   day - dusk  15.5373297 1.938958e-54 1.163375e-53*
+# 4 dawn - night  -1.2748278 2.023702e-01 4.047404e-01
+# 5  day - night  13.9480655 3.232546e-44 1.293018e-43*
+# 6 dusk - night  -1.5892642 1.120008e-01 3.360023e-01
+
+# Day sig. higher than all others
+
+
+# maneuvers
+kruskal.test(tot_light_adj ~ light_reg, 
+                data = light_mean_adj_man)
+
+# data:  tot_light_adj by light_reg
+# Kruskal-Wallis chi-squared = 233.62, df = 3, p-value < 2.2e-16
+
+
+dunnTest(tot_light_adj ~ light_reg, 
+                data = light_mean_adj_man,
+         method = "holm")
+
+#     Comparison            Z      P.unadj        P.adj
+# 1   dawn - day -12.34488565 5.190794e-35 2.595397e-34*  
+# 2  dawn - dusk   0.39042855 6.962197e-01 1.000000e+00
+# 3   day - dusk  12.73531420 3.763280e-37 2.257968e-36*  
+# 4 dawn - night  -0.00171348 9.986328e-01 9.986328e-01
+# 5  day - night  12.34317217 5.302482e-35 2.120993e-34*  
+# 6 dusk - night  -0.39214203 6.949533e-01 1.000000e+00
+
+# Day sig. higher than all others
+
+```
+
+
+
+
+
+
+
+
+
+
+```{r plotting hourly diel}
 # plot total vessels
 ggplot(data = daily_means_tot,
        aes(x = Begin_Hour_loc, 
@@ -1962,87 +2096,6 @@ ggsave(paste0("figs/", "Diel_mean_adj_bars_maneuvers.png"), width=8, height=12, 
 ```
 
 
-
-### Crazy idea but it just might work?
-
-```{r try weird idea for diel}
-
-# Use transparency for total/inside/maneuvers
-
-ggplot() +
-  geom_hline(yintercept = 0, 
-             linetype = 3, # dotted line
-             colour = "black") +
-  # bottom layer: total vessels (most transparent)
-  geom_col(data = daily_means_tot,
-           aes(x = Begin_Hour_loc, 
-               y = mean_diel_adj,
-               # conditional fill based on lower SD value
-               # "if mean +/- SD is above 0, 'over'
-               # fill = ifelse(sd_lower >= 0, 'over',
-               #               ifelse(sd_upper <=0, 'under', 'center'))
-           ),
-           fill = "white",
-           color = "grey35",
-           alpha = 0.2,
-           show.legend = FALSE) +
-  
-  # middle layer: inside vessels (less transparent)
-  geom_col(data = daily_means_ins,
-           aes(x = Begin_Hour_loc, 
-               y = mean_diel_adj,
-               # conditional fill based on lower SD value
-               # "if mean +/- SD is above 0, 'over'
-               # fill = ifelse(sd_lower >= 0, 'over',
-               #               ifelse(sd_upper <=0, 'under', 'center')),
-               color = ifelse(sd_lower >= 0, 'over',
-                             ifelse(sd_upper <=0, 'under', 'center'))
-           ),
-           # alpha = 0.6,
-           fill = "white",
-           show.legend = FALSE) +
-  
-  # top layer: maneuvering vessels (least transparent)
-    geom_col(data = daily_means_ins_man,
-           aes(x = Begin_Hour_loc, 
-               y = mean_diel_man_adj,
-               # conditional fill based on lower SD value
-               # "if mean +/- SD is above 0, 'over'
-               fill = ifelse(sd_lower >= 0, 'over',
-                             ifelse(sd_upper <=0, 'under', 'center')),
-               color = ifelse(sd_lower >= 0, 'over',
-                             ifelse(sd_upper <=0, 'under', 'center'))
-           ),
-           alpha = 0.6,
-           show.legend = FALSE) +
-  scale_fill_manual(values = c("over" = "deepskyblue", 
-                               "under" = "orange",
-                               "center" = "grey75"))+
-    scale_color_manual(values = c("over" = "deepskyblue", 
-                               "under" = "orange",
-                               "center" = "grey75"))+
-  scale_x_continuous(breaks = seq(0,23,2))+
-  labs(y = "Mean-adjusted average N vessels / hour",
-       x = "Hour of Day (Local TZ)",
-       title = "")+
-   facet_nested(rows = vars(network, npz_id, Dep_ID), 
-               nest_line = element_line(),
-               scales = "fixed") +
-  theme(
-    axis.text.x = element_text(face = "bold"),
-    strip.background = element_blank(),
-    strip.text.y = element_text(face = "bold")
-    )
-
-ggsave(paste0("figs/", "Diel_mean_adj_overlapping.png"), width=8, height=12, units="in", dpi=300)
-
-
-
-
-
-
-
-```
 
 ```{r pooling SIMP sites}
 ### Compare CGMP deployments
