@@ -2029,8 +2029,157 @@ ggplot(data = light_mean_adj_man,
 
 library(FSA)
 
-### by hour
+#### light regime
 
+# total vessels -- Temperate East
+kruskal.test(tot_light_adj ~ factor(light_reg), 
+                data = light_mean_adj_tot |> 
+               filter(network == "Temperate East"))
+# Kruskal-Wallis chi-squared = 695.59, df = 3, p-value < 2.2e-16
+
+
+dunn_light_tot_tmpeast <- dunnTest(tot_light_adj ~ factor(light_reg), 
+                          data = light_mean_adj_tot |> 
+                            filter(network == "Temperate East"),
+                          method = "holm")
+
+dunntable_light_tot_tmpeast <- as.data.frame(dunn_light_tot_tmpeast$res) |>
+  filter(P.adj <= 0.05)
+
+
+
+# total vessels -- Northwest
+kruskal.test(tot_light_adj ~ factor(light_reg), 
+                data = light_mean_adj_tot |> 
+               filter(network == "Northwest"))
+# Kruskal-Wallis chi-squared = 210.25, df = 3, p-value < 2.2e-16
+
+
+dunn_light_tot_northwest <- dunnTest(tot_light_adj ~ factor(light_reg), 
+                          data = light_mean_adj_tot |> 
+                            filter(network == "Northwest"),
+                          method = "holm")
+
+dunntable_light_tot_northwest <- as.data.frame(dunn_light_tot_northwest$res) |>
+  filter(P.adj <= 0.05)
+
+
+
+
+# total vessels -- South-west
+kruskal.test(tot_light_adj ~ factor(light_reg), 
+                data = light_mean_adj_tot |> 
+               filter(network == "South-west"))
+# Kruskal-Wallis chi-squared = 740.34, df = 3, p-value < 2.2e-16
+
+
+dunn_light_tot_swest <- dunnTest(tot_light_adj ~ factor(light_reg), 
+                          data = light_mean_adj_tot |> 
+                            filter(network == "South-west"),
+                          method = "holm")
+
+dunntable_light_tot_swest <- as.data.frame(dunn_light_tot_swest$res) |>
+  filter(P.adj <= 0.05)
+
+#'----------------------------------------------------------
+
+# inside vessels -- Temperate East
+kruskal.test(tot_light_adj ~ factor(light_reg), 
+                data = light_mean_adj_ins |> 
+               filter(network == "Temperate East"))
+# Kruskal-Wallis chi-squared = 232.19, df = 3, p-value < 2.2e-16
+
+
+dunn_light_ins_tmpeast <- dunnTest(tot_light_adj ~ factor(light_reg), 
+                          data = light_mean_adj_ins |> 
+                            filter(network == "Temperate East"),
+                          method = "holm")
+
+dunntable_light_ins_tmpeast <- as.data.frame(dunn_light_ins_tmpeast$res) |>
+  filter(P.adj <= 0.05)
+
+
+
+# inside vessels -- Northwest
+kruskal.test(tot_light_adj ~ factor(light_reg), 
+                data = light_mean_adj_ins |> 
+               filter(network == "Northwest"))
+# Kruskal-Wallis chi-squared = 7.6667, df = 3, p-value = 0.05343
+
+# NS overall, no post hoc
+
+
+
+
+# inside vessels -- South-west
+kruskal.test(tot_light_adj ~ factor(light_reg), 
+                data = light_mean_adj_ins |> 
+               filter(network == "South-west"))
+# Kruskal-Wallis chi-squared = 96.914, df = 3, p-value < 2.2e-16
+
+
+dunn_light_ins_swest <- dunnTest(tot_light_adj ~ factor(light_reg), 
+                          data = light_mean_adj_ins |> 
+                            filter(network == "South-west"),
+                          method = "holm")
+
+dunntable_light_ins_swest <- as.data.frame(dunn_light_ins_swest$res) |>
+  filter(P.adj <= 0.05)
+
+#'----------------------------------------------------------
+
+# maneuverss -- Temperate East
+kruskal.test(tot_light_adj ~ factor(light_reg), 
+                data = light_mean_adj_man |> 
+               filter(network == "Temperate East"))
+# Kruskal-Wallis chi-squared = 166.06, df = 3, p-value < 2.2e-16
+
+
+dunn_light_man_tmpeast <- dunnTest(tot_light_adj ~ factor(light_reg), 
+                          data = light_mean_adj_man |> 
+                            filter(network == "Temperate East"),
+                          method = "holm")
+
+dunntable_light_man_tmpeast <- as.data.frame(dunn_light_man_tmpeast$res) |>
+  filter(P.adj <= 0.05)
+
+
+
+# inside vessels -- Northwest
+kruskal.test(tot_light_adj ~ factor(light_reg), 
+                data = light_mean_adj_man |> 
+               filter(network == "Northwest"))
+# Kruskal-Wallis chi-squared = 7, df = 3, p-value = 0.0719
+
+# NS overall, no post hoc
+
+
+
+
+# inside vessels -- South-west
+kruskal.test(tot_light_adj ~ factor(light_reg), 
+                data = light_mean_adj_man |> 
+               filter(network == "South-west"))
+# Kruskal-Wallis chi-squared = 62.931, df = 3, p-value = 1.389e-13
+
+
+dunn_light_man_swest <- dunnTest(tot_light_adj ~ factor(light_reg), 
+                          data = light_mean_adj_man |> 
+                            filter(network == "South-west"),
+                          method = "holm")
+
+dunntable_light_man_swest <- as.data.frame(dunn_light_ins_swest$res) |>
+  filter(P.adj <= 0.05)
+
+```
+
+
+
+
+```{r kw by hour}
+
+
+### by hour
 
 # total vessels -- Temperate East
 kruskal.test(tot_diel_adj ~ factor(Begin_Hour_loc), 
