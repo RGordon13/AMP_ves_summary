@@ -1109,11 +1109,14 @@ week_ins_aov_tmpeast <- aov(tot_wkdy_adj ~ npz_dep*Weekday,
 
 summary(week_ins_aov_tmpeast)
 
+# sig. intxn
 
 # Tukey HSD for interaction model
 
-tukey_week_ins <- tidy(TukeyHSD(week_ins_aov_tmpeast)) |>
+tukey_week_ins_tmpeast <- tidy(TukeyHSD(week_ins_aov_tmpeast)) |>
   filter(adj.p.value <= 0.05)
+# No sig. pairwise comparisons
+
 
 
 # Inside -- Northwest
@@ -1933,7 +1936,7 @@ all_ves_gmt11 <- all_sites_hp |>
  # summarize means & SD for plots
  light_means_tot <- light_mean_adj_tot |>
   # group to light level per deployment
-  group_by(network, npz_id, Dep_ID, light_reg) |>
+  group_by(network, light_reg) |>
   # get mean of mean-adjusted ounts per hour
   summarise(mean_light_adj = mean(tot_light_adj, na.rm =TRUE)) |>
   # get lower & upper bounds for SD around mean of adjusted counts
@@ -1944,6 +1947,13 @@ ggplot(data = light_mean_adj_tot,
         aes(x = npz_id, y = tot_light_adj, color = light_reg)) +
    geom_boxplot()
  
+ 
+ggplot(data = light_means_tot,
+        aes(x = light_reg, y = mean_light_adj)) +
+   geom_pointrange(aes(ymin = sd_lower, ymax=sd_upper)) +
+  geom_hline(yintercept = 0)+
+  facet_grid(rows = vars(network),
+             scales = "free_y")
  
 # Calculate daily mean-adjusted counts per hour for inside vessels
 light_mean_adj_ins <- all_ves_light |>
@@ -1970,7 +1980,7 @@ light_mean_adj_ins <- all_ves_light |>
  # summarize means & SD for plots
  light_means_ins <- light_mean_adj_ins |>
   # group to light level per deployment
-  group_by(network, npz_id, Dep_ID, light_reg) |>
+  group_by(network, light_reg) |>
   # get mean of mean-adjusted ounts per hour
   summarise(mean_light_adj = mean(tot_light_adj, na.rm =TRUE)) |>
   # get lower & upper bounds for SD around mean of adjusted counts
@@ -2007,7 +2017,7 @@ light_mean_adj_man <- all_ves_light |>
  # summarize means & SD for plots
  light_means_man <- light_mean_adj_man |>
   # group to light level per deployment
-  group_by(network, npz_id, Dep_ID, light_reg) |>
+  group_by(network, light_reg) |>
   # get mean of mean-adjusted ounts per hour
   summarise(mean_light_adj = mean(tot_light_adj, na.rm =TRUE)) |>
   # get lower & upper bounds for SD around mean of adjusted counts
@@ -2173,6 +2183,20 @@ dunntable_light_man_swest <- as.data.frame(dunn_light_ins_swest$res) |>
 
 ```
 
+```{r plot light regimes}
+
+ggplot(data = light_means_tot,
+        aes(x = light_reg, y = mean_light_adj)) +
+   geom_pointrange(aes(ymin = sd_lower, ymax=sd_upper)) +
+  geom_hline(yintercept = 0,
+             linetype = 3)+
+  facet_grid(rows = vars(network),
+             scales = "free_y")
+
+
+
+
+```
 
 
 
@@ -2323,107 +2347,7 @@ dunntable_man_swest <- as.data.frame(dunn_hour_man_swest$res) |>
 # all pairwise are NS
 
 
-
-
-# maneuver
-
-kruskal.test(ins_diel_man_adj ~ factor(Begin_Hour_loc), 
-                data = daily_mean_adj_ins_man)
-
-dunn_hour_man <- dunnTest(ins_diel_man_adj ~ factor(Begin_Hour_loc), 
-                data = daily_mean_adj_ins_man,
-                          method = "holm")
-
-dunntable_man <- as.data.frame(dunn_hour_man$res)
-
-
-
-
-
-# by light regime
-
-light_mean_adj_tot <- light_mean_adj_tot |>
-  mutate(npz_dep = as_factor(paste0(npz_id, Dep_ID)),
-         light_reg = as_factor(light_reg))
-
-
-# all vessels
-kruskal.test(tot_light_adj ~ light_reg, 
-                data = light_mean_adj_tot)
-
-dunnTest(tot_light_adj ~ light_reg, 
-                data = light_mean_adj_tot,
-         method = "holm")
-
-#     Comparison          Z       P.unadj         P.adj
-# 1   dawn - day -33.369157 3.842517e-244 1.921258e-243*
-# 2  dawn - dusk   2.125593  3.353720e-02  3.353720e-02*
-# 3   day - dusk  35.494749 5.923338e-276 3.554003e-275*
-# 4 dawn - night  -9.584905  9.254284e-22  1.850857e-21*
-# 5  day - night  23.784252 4.860984e-125 1.944394e-124*
-# 6 dusk - night -11.710497  1.126170e-31  3.378509e-31*
-
-# all time periods sig different from one another for total vessels
-# Day sig. greater than all others
-# Night sig. greater than dusk & dawn
-# Dawn sig. greater than dusk
-
-
-
-
-# inside vessels
-
-
-kruskal.test(tot_light_adj ~ light_reg, 
-                data = light_mean_adj_ins)
-
-# data:  tot_light_adj by light_reg
-# Kruskal-Wallis chi-squared = 335.97, df = 3, p-value < 2.2e-16
-
-dunnTest(tot_light_adj ~ light_reg, 
-                data = light_mean_adj_ins,
-         method = "holm")
-
-#     Comparison           Z      P.unadj        P.adj
-# 1   dawn - day -15.2228933 2.492591e-52 1.246296e-51*
-# 2  dawn - dusk   0.3144364 7.531896e-01 7.531896e-01
-# 3   day - dusk  15.5373297 1.938958e-54 1.163375e-53*
-# 4 dawn - night  -1.2748278 2.023702e-01 4.047404e-01
-# 5  day - night  13.9480655 3.232546e-44 1.293018e-43*
-# 6 dusk - night  -1.5892642 1.120008e-01 3.360023e-01
-
-# Day sig. higher than all others
-
-
-# maneuvers
-kruskal.test(tot_light_adj ~ light_reg, 
-                data = light_mean_adj_man)
-
-# data:  tot_light_adj by light_reg
-# Kruskal-Wallis chi-squared = 233.62, df = 3, p-value < 2.2e-16
-
-
-dunnTest(tot_light_adj ~ light_reg, 
-                data = light_mean_adj_man,
-         method = "holm")
-
-#     Comparison            Z      P.unadj        P.adj
-# 1   dawn - day -12.34488565 5.190794e-35 2.595397e-34*  
-# 2  dawn - dusk   0.39042855 6.962197e-01 1.000000e+00
-# 3   day - dusk  12.73531420 3.763280e-37 2.257968e-36*  
-# 4 dawn - night  -0.00171348 9.986328e-01 9.986328e-01
-# 5  day - night  12.34317217 5.302482e-35 2.120993e-34*  
-# 6 dusk - night  -0.39214203 6.949533e-01 1.000000e+00
-
-# Day sig. higher than all others
-
 ```
-
-
-
-
-
-
 
 
 
