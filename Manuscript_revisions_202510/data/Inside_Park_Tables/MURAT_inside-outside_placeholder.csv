@@ -1,0 +1,3 @@
+Filename,Date,Selection,Behavior,PeakFreq,peakRL,reviewed,used,ins_sm,out_sm,ins_med,out_med,ins_lg,out_lg,pins_sm,pins_med,pins_lg,pins_ovrll
+5429.200320034435_sel01_S1.wav,2.0032E+11,S1,Transit,75,96.21393675,1,0,280,1047,715,0,0,0,0.211002261,,0,0
+5429.200327214322_sel01_S1.wav,2.00327E+11,S1,Transit,28,66.65370469,1,0,,,,,,,,,,
